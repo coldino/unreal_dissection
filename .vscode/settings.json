@@ -1,0 +1,22 @@
+{
+    "python.analysis.diagnosticMode": "workspace",
+    "python.analysis.typeCheckingMode": "strict",
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+        }
+    },
+    "cSpell.words": [
+        "PEFile",
+        "pkbuffer",
+        "pread",
+        "Ptrs",
+        "Purlovia",
+        "rdata",
+        "Ubergraph",
+        "UE",
+        "VTable",
+        "wstr"
+    ]
+}

@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "unreal-dissection"
+version = "0.1.0"
+description = "Extracts detailed metadata from Unreal Engine games using static analysis."
+authors = ["coldino <28345893+coldino@users.noreply.github.com>"]
+readme = "README.md"
+packages = [{include = "unreal_dissection", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+dataclasses-struct = "^0.8.0"
+iced-x86 = "^1.20.0"
+lief = {version = "^0.14.0.dev0", source = "lief-dev"}
+
+
+[[tool.poetry.source]]
+name = "lief-dev"
+url = "https://lief.s3-website.fr-par.scw.cloud/latest"
+priority = "explicit"
+
+
+[[tool.poetry.source]]
+name = "PyPI"
+priority = "default"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
