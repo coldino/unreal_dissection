@@ -1,20 +1,35 @@
+# ruff: noqa: N802 - allow function names to include type names
+
 from __future__ import annotations
 
 from logging import getLogger
-from typing import Iterator
+from typing import TYPE_CHECKING
 
-from ...discovery.core import Discovery
 from ...discovery.function import FunctionDiscovery
 from ...discovery.string import Utf8Discovery
 from ...discovery.struct import StructDiscovery
 from ...discovery.system import register_explorer
-from ...lieftools import Image
 from ...struct import get_struct_size_aligned
 from ..discovery.function import ZConstructFunctionDiscovery
-from ..functions import parse_StaticClass_fn
-from ..native_structs import DynamicPropertyParams, FClassFunctionLinkInfo, FClassParams, FEnumeratorParams, \
-    FEnumParams, FFunctionParams, FImplementedInterfaceParams, FPackageParams, FStructParams
+from ..functions import parse_StaticClass
+from ..native_structs import (
+    DynamicPropertyParams,
+    FClassFunctionLinkInfo,
+    FClassParams,
+    FEnumeratorParams,
+    FEnumParams,
+    FFunctionParams,
+    FImplementedInterfaceParams,
+    FPackageParams,
+    FStructParams,
+)
 from ..z_construct import ZConstructFnType
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from ...discovery.core import Discovery
+    from ...lieftools import Image
 
 log = getLogger(__name__)
 
@@ -30,7 +45,7 @@ def explore_FPackageParams(subject: FPackageParams, image: Image) -> Iterator[Di
 
 @register_explorer(FClassParams)
 def explore_FClassParams(subject: FClassParams, image: Image) -> Iterator[Discovery]:
-    yield FunctionDiscovery(subject.ClassNoRegisterFunc, parse_StaticClass_fn)
+    yield FunctionDiscovery(subject.ClassNoRegisterFunc, parse_StaticClass)
     yield Utf8Discovery(subject.ClassConfigNameUTF8)
 
     if subject.DependencySingletonFuncArray:
@@ -64,7 +79,7 @@ def explore_FStructParams(subject: FStructParams, image: Image) -> Iterator[Disc
 
 
 @register_explorer(FEnumParams)
-def explore_FEnumParams(subject: FEnumParams, image: Image) -> Iterator[Discovery]:
+def explore_FEnumParams(subject: FEnumParams, _image: Image) -> Iterator[Discovery]:
     yield ZConstructFunctionDiscovery(subject.OuterFunc, None)
     yield Utf8Discovery(subject.NameUTF8)
     yield Utf8Discovery(subject.CppTypeUTF8)
@@ -89,16 +104,16 @@ def explore_FFunctionParams(subject: FFunctionParams, image: Image) -> Iterator[
 
 
 @register_explorer(FEnumeratorParams)
-def explore_FEnumeratorParams(subject: FEnumeratorParams, image: Image) -> Iterator[Discovery]:
+def explore_FEnumeratorParams(subject: FEnumeratorParams, _image: Image) -> Iterator[Discovery]:
     yield Utf8Discovery(subject.NameUTF8)
 
 
 @register_explorer(FImplementedInterfaceParams)
-def explore_FImplementedInterfaceParams(subject: FImplementedInterfaceParams, image: Image) -> Iterator[Discovery]:
+def explore_FImplementedInterfaceParams(subject: FImplementedInterfaceParams, _image: Image) -> Iterator[Discovery]:
     yield ZConstructFunctionDiscovery(subject.ClassFunc, None)
 
 
 @register_explorer(FClassFunctionLinkInfo)
-def explore_FClassFunctionLinkInfo(subject: FClassFunctionLinkInfo, image: Image) -> Iterator[Discovery]:
+def explore_FClassFunctionLinkInfo(subject: FClassFunctionLinkInfo, _image: Image) -> Iterator[Discovery]:
     yield ZConstructFunctionDiscovery(subject.CreateFuncPtr, ZConstructFnType.Function)
     yield Utf8Discovery(subject.FuncNameUTF8)

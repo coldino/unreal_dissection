@@ -1,0 +1,39 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: extractor",
+            "type": "python",
+            "request": "launch",
+            "module": "extractor",
+            "args": [
+                // "E:\\SteamLibrary\\steamapps\\common\\Goobies Demo\\Goobies_Vulkan\\Shooter\\Binaries\\Win64\\Shooter-Win64-Shipping.exe",
+                // "E:\\Data\\game-beta-backups\\Nightingale\\NWX\\Binaries\\Win64\\NWXClient-Win64-Shipping.exe",
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "PyTest",
+            "type": "python",
+            "request": "launch",
+            "stopOnEntry": false,
+            "module": "pytest",
+            "args": [
+                "-sv",
+                "${workspaceFolder}/tests",
+            ],
+            "cwd": "${workspaceRoot}",
+            "env": {},
+            "envFile": "${workspaceRoot}/.env",
+            // "debugOptions": [
+            //     "WaitOnAbnormalExit",
+            //     "WaitOnNormalExit",
+            //     "RedirectOutput"
+            // ]
+        },
+    ]
+}

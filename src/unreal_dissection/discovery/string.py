@@ -1,6 +1,6 @@
+from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import Enum
-from typing import Iterator
 
 from ..lieftools import Image
 from .core import Artefact, Discovery
@@ -12,7 +12,7 @@ class StringEncoding(Enum):
 
 @dataclass(frozen=True, unsafe_hash=True, eq=True, slots=True, repr=False)
 class StringArtefact(Artefact):
-    """A string discovered by the extractor."""
+    '''A string discovered by the extractor.'''
     encoding: StringEncoding
     string: str
 

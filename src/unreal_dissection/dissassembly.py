@@ -1,27 +1,36 @@
+# ruff: noqa: E701
+
 from collections import defaultdict
+from collections.abc import Generator
 from dataclasses import dataclass
 from logging import getLogger
-from typing import Generator
 
-from iced_x86 import Code, Decoder, DecoderOptions, Formatter, FormatterSyntax, \
-    Instruction, InstructionInfo, InstructionInfoFactory, Register, Register_
+from iced_x86 import (
+    Code,
+    Decoder,
+    DecoderOptions,
+    Formatter,
+    FormatterSyntax,
+    Instruction,
+    InstructionInfo,
+    InstructionInfoFactory,
+    Register,
+    Register_,
+)
 
 from .stream import MemoryStream
 
 log = getLogger(__name__)
 
 DBG = False
-# DBG = True
 
 info_factory = InstructionInfoFactory()
 formatter = Formatter(FormatterSyntax.INTEL)
-formatter.digit_separator = "_"
+formatter.digit_separator = '_'
 formatter.first_operand_char_index = 10
 
 
 def print_instruction(instr: Instruction):
-    # code = code_to_string(instr.code)
-    # regs = [used_reg_to_string(r) for r in info_factory.info(instr).used_registers()]
     print(f'{instr.ip:010x} {formatter.format(instr)}')  #  ({code}) , uses={regs}
 
 
@@ -77,7 +86,7 @@ def parse_cached_call(code: CodeGrabber) -> CachedCallResult:
         # Not a cached call at all - hopefully a redirect to one!
         code.jump(inst.memory_displacement)
         return parse_cached_call(code)
-    elif inst.code == Code.MOV_R64_RM64:
+    if inst.code == Code.MOV_R64_RM64:
         # MOV RAX, [ptr] (cache variable)
         cache_var = inst.memory_displacement
         cache_form = 1
@@ -86,22 +95,19 @@ def parse_cached_call(code: CodeGrabber) -> CachedCallResult:
         inst = code.next_inst()
         assert inst.code == Code.TEST_RM64_R64
 
-        # JNE #? (skip call if already cached)
         inst = code.next_inst()
         assert inst.code in (Code.JNE_REL8_64, Code.JNE_REL32_64)
         ret_label = inst.memory_displacement
-        # print(f"ret_label: {ret_label:010x}")
     elif inst.code == Code.CMP_RM64_IMM8:
         # CMP [cache_ptr], #0
         cache_var = inst.memory_displacement
         cache_form = 2
 
-        # JNZ #? (skip call if already cached)
         inst = code.next_inst()
         assert inst.code in (Code.JNE_REL8_64, Code.JNE_REL32_64)
         ret_label = inst.memory_displacement
     else:
-        raise AssertionError(f"Unexpected instruction when parsing cached call: {inst.code} @ 0x{inst.ip:x}")
+        raise AssertionError(f'Unexpected instruction when parsing cached call: {inst.code} @ 0x{inst.ip:x}')
 
     # Parse the setup and call of the function
     fn_addr, parameters = gather_call_params(code, stack_size, stack_save_reg)
@@ -123,12 +129,13 @@ def parse_cached_call(code: CodeGrabber) -> CachedCallResult:
         assert inst.code == Code.RETNQ
     else:
         # We have to assume there's some other processing here that we don't care about
-        log.warning(f"Unexpected instruction after cached call: {inst.code} @ 0x{inst.ip:x}")
+        log.warning('Unexpected instruction after cached call: {inst.code} @ 0x{inst.ip:x}',
+                    extra=dict(inst=inst))
 
     return CachedCallResult(
         cache_addr=cache_var,
         called_fn_addr=fn_addr,
-        parameters=parameters
+        parameters=parameters,
     )
 
 
@@ -136,7 +143,7 @@ def parse_cached_call(code: CodeGrabber) -> CachedCallResult:
 ARG_REGS = [Register.RCX, Register.RDX, Register.R8, Register.R9]
 
 
-def gather_call_params(code: CodeGrabber,
+def gather_call_params(code: CodeGrabber,  # noqa: PLR0915, PLR0912 - yes, this function is too complex
                        stack_size: int,
                        stack_save_reg: Register_ | None = None,
                        known_regs: dict[Register_, int] | None = None) -> tuple[int, list[int]]:
@@ -173,7 +180,7 @@ def gather_call_params(code: CodeGrabber,
                 offset = 0xFFFF - ARG_REGS.index(reg)
                 if DBG:
                     print(
-                        f' -> offset1: 0x{offset:02x} ({formatter.format_register(reg)}) = 0x{value:010x}'
+                        f' -> offset1: 0x{offset:02x} ({formatter.format_register(reg)}) = 0x{value:010x}',
                     )
                 parameters.append((value, size, offset))
             else:
@@ -206,7 +213,7 @@ def gather_call_params(code: CodeGrabber,
                 offset = stack_size - info.used_memory()[0].displacement
                 if DBG: print(f' -> offset5: 0x{offset:02x} = dword ptr [RSP + 0x{info.used_memory()[0].displacement:02x}]')
             else:
-                raise AssertionError("Unknown MOV when parameter push")
+                raise AssertionError('Unknown MOV when parameter push')
             value = inst.immediate32
             parameters.append((value, 4, offset))
 
@@ -219,7 +226,7 @@ def gather_call_params(code: CodeGrabber,
                 offset = stack_size - info.used_memory()[0].displacement_i64
                 if DBG: print(f' -> offset7: 0x{offset:02x} = dword ptr [RSP + 0x{info.used_memory()[0].displacement:02x}]')
             else:
-                raise AssertionError("Unknown MOV when parameter push")
+                raise AssertionError('Unknown MOV when parameter push')
             value = regs[info.used_registers()[1].register]
             parameters.append((value, 8, offset))
 
@@ -233,22 +240,23 @@ def gather_call_params(code: CodeGrabber,
                 offset = 0xFFFF - ARG_REGS.index(reg)
                 if DBG:
                     print(
-                        f' -> offset8: 0x{offset:02x} ({formatter.format_register(reg)}) = 0x{value:010x}'
+                        f' -> offset8: 0x{offset:02x} ({formatter.format_register(reg)}) = 0x{value:010x}',
                     )
                 parameters.append((value, 8, offset))
             else:
                 regs[reg] = value
 
         else:
-            raise AssertionError(f"Unknown instruction when parameter push: {inst.code} @ 0x{inst.ip:010x}")
+            raise AssertionError(f'Unknown instruction when parameter push: {inst.code} @ 0x{inst.ip:010x}')
 
     # We're at the CALL
     fn = inst.memory_displacement
 
     # Sort the stack/register parameters into call argument order
     parameters.sort(key=lambda x: x[2], reverse=True)
-    # for p in parameters:
-    #     print(f"    {p[0]:010x} {p[1]:x} {p[2]:x} = {str16_at(code.stream, p[0])}")
+    if DBG:
+        for p in parameters:
+            print(f'    {p[0]:010x} {p[1]:x} {p[2]:x} = {code.stream.clone_at(p[0]).utf16zt_safe()}')
 
     return fn, [param[0] for param in parameters if param[2] >= 0]
 
@@ -290,18 +298,18 @@ def get_fn_stack_size(code: CodeGrabber) -> int:
     assert info.used_registers()[0].register == Register.RSP
     return inst.immediate(1)
 
-class UnexpectedInstruction(Exception):
+class UnexpectedInstructionError(Exception):
     pass
 
 def parse_fn_prelude(code: CodeGrabber) -> tuple[int, Register_ | None]:
-    """Parse a typical function prelude.
+    '''Parse a typical function prelude.
 
     The prelude consists of zero to many jump instructions, followed by a stack setup.
 
     Returns:
         A CodeGrabber object for the function body, the stack size, and the register used to save the stack ptr.
 
-    """
+    '''
     stack_size = 0
     stack_save_reg: Register_ | None = None
 
@@ -322,14 +330,24 @@ def parse_fn_prelude(code: CodeGrabber) -> tuple[int, Register_ | None]:
         assert info.used_registers()[0].register == Register.RSP
         stack_size = inst.immediate32
     else:
-        raise UnexpectedInstruction(f"Unexpected function prelude at 0x{inst.ip:x}: {formatter.format(inst)}")
+        raise UnexpectedInstructionError(f'Unexpected function prelude at 0x{inst.ip:x}: {formatter.format(inst)}')
 
     return stack_size, stack_save_reg
 
 
 def parse_trampolines(code: CodeGrabber) -> Generator[int, None, None]:
-    """Parse any trampolines leading to a function."""
+    '''Parse any trampolines leading to a function.'''
     while True:
+        inst = code.next_inst()
+
+        if inst.code == Code.JMP_REL32_64:
+            code.jump(inst.memory_displacement)
+            yield inst.ip
+            continue
+
+        # Anything else ends the search
+        code.jump(inst.ip)
+        break
         inst = code.next_inst()
 
         if inst.code == Code.JMP_REL32_64:

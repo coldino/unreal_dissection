@@ -4,10 +4,18 @@ from dataclasses_struct import field
 
 from ..stream import MemoryStream
 from ..struct import DynamicStruct, dcs, structclass
-from .native_enums import (EArrayPropertyFlags, EEnumFlags, EFunctionFlags,
-                           EMapPropertyFlags, EObjectFlags, EPackageFlags,
-                           EPropertyFlags, EPropertyGenFlags, EStructFlags,
-                           PropertyType_Full)
+from .native_enums import (
+    EArrayPropertyFlags,
+    EEnumFlags,
+    EFunctionFlags,
+    EMapPropertyFlags,
+    EObjectFlags,
+    EPackageFlags,
+    EPropertyFlags,
+    EPropertyGenFlags,
+    EStructFlags,
+    PropertyTypeFull,
+)
 
 
 @structclass
@@ -83,7 +91,7 @@ class FEnumeratorParams:
 class FImplementedInterfaceParams:
     ClassFunc: dcs.U64 # ptr to Z_Construct_UClass_XXX_NoRegister function
     Offset: dcs.I32
-    bImplementedByK2: dcs.Bool
+    bImplementedByK2: dcs.Bool  # noqa: N815
 
 @structclass
 class FClassFunctionLinkInfo:
@@ -96,7 +104,7 @@ class DynamicPropertyParams(DynamicStruct):
         self.NameUTF8_ptr = stream.u64()
         self.RepNotifyFuncUTF8_ptr = stream.u64()
         self.PropertyFlags = EPropertyFlags(stream.u64())
-        self.Flags = PropertyType_Full(stream.u32())
+        self.Flags = PropertyTypeFull(stream.u32())
         self.ObjectFlags = EObjectFlags(stream.u32())
         self.ArrayDim = stream.s32()
 
@@ -127,7 +135,7 @@ class DynamicPropertyParams(DynamicStruct):
                 self.MapFlags = EMapPropertyFlags(stream.u32())
             case EPropertyGenFlags.InlineMulticastDelegate | EPropertyGenFlags.SparseMulticastDelegate:
                 self.SignatureFunctionFunc_ptr = stream.u64()
-            case EPropertyGenFlags.Object | EPropertyGenFlags.WeakObject | EPropertyGenFlags.LazyObject | EPropertyGenFlags.SoftObject:
+            case EPropertyGenFlags.Object | EPropertyGenFlags.WeakObject | EPropertyGenFlags.LazyObject | EPropertyGenFlags.SoftObject:  # noqa: E501
                 self.ClassFunc_ptr = stream.u64()
             case EPropertyGenFlags.SoftClass:
                 self.MetaClassFunc_ptr = stream.u64()

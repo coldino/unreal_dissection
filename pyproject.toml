@@ -23,6 +23,29 @@ priority = "explicit"
 name = "PyPI"
 priority = "default"
 
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.0.287"
+pytest = "^7.4.1"
+pre-commit = "^3.4.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+target-version = "py312"
+src = ["src"]
+select = ['E', 'F', 'UP', 'I', 'N', 'YTT', 'ASYNC', 'S', 'FBT', 'B', 'A', 'COM', 'C4', 'T10', 'FA', 'ISC', 'G', 'INP', 'PYI', 'PT', 'Q', 'RSE', 'RET', 'SLF', 'SLOT', 'SIM', 'TCH', 'ARG', 'PTH', 'FIX', 'ERA', 'PL', 'FLY', 'PERF', 'FURB', 'RUF']
+ignore = ['S101', 'A003', 'C408', 'RET504', 'PLR2004', 'TRY003']
+unfixable = ['ERA']
+line-length = 127
+
+[tool.ruff.flake8-quotes]
+inline-quotes = 'single'
+docstring-quotes = 'single'
+avoid-escape = true
+multiline-quotes = 'double'
+
+[tool.pyright]
+pythonVersion = 3.12

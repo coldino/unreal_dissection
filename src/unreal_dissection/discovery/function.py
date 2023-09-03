@@ -1,24 +1,27 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from logging import getLogger
-from typing import Any, Callable, Iterator
+from typing import TYPE_CHECKING, Any
 
 from ..dissassembly import CodeGrabber
-from ..lieftools import Image
 from .core import Artefact, Discovery, DiscoveryComparison
+
+if TYPE_CHECKING:
+    from ..lieftools import Image
 
 log = getLogger(__name__)
 
 @dataclass(frozen=True, unsafe_hash=True, eq=True, slots=True, repr=False)
 class TrampolineArtefact(Artefact):
-    """A jump to a function discovered by the extractor."""
+    '''A jump to a function discovered by the extractor.'''
     target: FunctionArtefact
 
 
 @dataclass(frozen=True, unsafe_hash=True, eq=True, slots=True, repr=False)
 class FunctionArtefact(Artefact):
-    """A parsed function discovered by the extractor."""
+    '''A parsed function discovered by the extractor.'''
     fn_type: FunctionParserFn
 
 
@@ -33,12 +36,14 @@ class FunctionDiscovery(Discovery):
     def compare(self, previous: Discovery) -> DiscoveryComparison:
         # Must be the same type
         if not isinstance(previous, FunctionDiscovery):
-            log.warn(f'FunctionDiscovery.compare: complete type mismatch: {self} != {previous}')
+            log.warning('FunctionDiscovery.compare: complete type mismatch: {self} != {previous}',
+                        extra=dict(self=self, previous=previous))
             return DiscoveryComparison.NoMatch
 
         # Must be the same type of function
         if self.parser_fn != previous.parser_fn:
-            log.warn(f'FunctionDiscovery.compare: function mismatch: 0x{self.parser_fn} != 0x{previous.parser_fn}')
+            log.warning('FunctionDiscovery.compare: function mismatch: 0x{self.parser_fn} != 0x{previous.parser_fn}',
+                        extra=dict(self=self, previous=previous))
             return DiscoveryComparison.NoMatch
 
         # If we have info, but the other doesn't, replace it
@@ -51,7 +56,8 @@ class FunctionDiscovery(Discovery):
 
         # Otherwise the info must match
         if self.info != previous.info:
-            log.warn(f'FunctionDiscovery.compare: info mismatch: {self.info} != {previous.info}')
+            log.warning('FunctionDiscovery.compare: info mismatch: {self.info} != {previous.info}',
+                        extra=dict(self=self, previous=previous))
             return DiscoveryComparison.NoMatch
 
         # If we get here, the info matches

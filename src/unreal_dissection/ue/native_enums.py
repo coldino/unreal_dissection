@@ -42,19 +42,19 @@ class EPropertyTypeFlags(IntFlag):
     ObjectPtr = 0x40 # duplicated in symbols
     NativeBool = 0x40 # duplicated in symbols
 
-class PropertyType_Full:
+class PropertyTypeFull:
     def __init__(self, value: int):
         self.value = EPropertyGenFlags(value & 0x3f)
         self.flags = EPropertyTypeFlags(value & ~0x3f)
 
     def __str__(self):
         if self.flags > 0:
-            return f"{self.value} | {self.flags.name}"
-        return f"{self.value}"
+            return f'{self.value} | {self.flags.name}'
+        return f'{self.value}'
 
     def __repr__(self):
         if self.flags > 0:
-            return f"{self.value} | {str(self.flags)}"
+            return f'{self.value} | {self.flags!s}'
         return str(self.value)
 
 @verify(UNIQUE)
@@ -149,33 +149,35 @@ class EObjectFlags(IntFlag, boundary=STRICT):
 
 @verify(UNIQUE)
 class EPackageFlags(IntFlag, boundary=STRICT):
-	none						= 0x00000000
-	NewlyCreated				= 0x00000001
-	ClientOptional				= 0x00000002
-	ServerSideOnly				= 0x00000004
-	CompiledIn					= 0x00000010
-	ForDiffing					= 0x00000020
-	EditorOnly					= 0x00000040
-	Developer					= 0x00000080
-	UncookedOnly				= 0x00000100
-	Cooked						= 0x00000200
-	ContainsNoAsset				= 0x00000400
-	NotExternallyReferenceable  = 0x00000800
-	UnversionedProperties		= 0x00002000
-	ContainsMapData				= 0x00004000
-	IsSaving					= 0x00008000
-	Compiling					= 0x00010000
-	ContainsMap					= 0x00020000
-	RequiresLocalizationGather	= 0x00040000
-	PlayInEditor				= 0x00100000
-	ContainsScript				= 0x00200000
-	DisallowExport				= 0x00400000
-	CookGenerated				= 0x08000000
-	DynamicImports				= 0x10000000
-	RuntimeGenerated			= 0x20000000
-	ReloadingForCooker			= 0x40000000
-	FilterEditorOnly			= 0x80000000
-	# TransientFlags				= NewlyCreated | IsSaving | ReloadingForCooker,
+    none						= 0x00000000
+    NewlyCreated				= 0x00000001
+    ClientOptional				= 0x00000002
+    ServerSideOnly				= 0x00000004
+    CompiledIn					= 0x00000010
+    ForDiffing					= 0x00000020
+    EditorOnly					= 0x00000040
+    Developer					= 0x00000080
+    UncookedOnly				= 0x00000100
+    Cooked						= 0x00000200
+    ContainsNoAsset				= 0x00000400
+    NotExternallyReferenceable  = 0x00000800
+    UnversionedProperties		= 0x00002000
+    ContainsMapData				= 0x00004000
+    IsSaving					= 0x00008000
+    Compiling					= 0x00010000
+    ContainsMap					= 0x00020000
+    RequiresLocalizationGather	= 0x00040000
+    PlayInEditor				= 0x00100000
+    ContainsScript				= 0x00200000
+    DisallowExport				= 0x00400000
+    CookGenerated				= 0x08000000
+    DynamicImports				= 0x10000000
+    RuntimeGenerated			= 0x20000000
+    ReloadingForCooker			= 0x40000000
+    FilterEditorOnly			= 0x80000000
+    """
+    TransientFlags				= NewlyCreated | IsSaving | ReloadingForCooker,
+    """
 
 
 @verify(CONTINUOUS, UNIQUE)
@@ -217,33 +219,39 @@ class EClassFlags(IntFlag, boundary=STRICT):
 
 @verify(UNIQUE)
 class EStructFlags(IntFlag, boundary=STRICT):
-	NoFlags				= 0x00000000,
-	Native				= 0x00000001,
-	IdenticalNative		= 0x00000002,
-	HasInstancedReference= 0x00000004,
-	NoExport				= 0x00000008,
-	Atomic				= 0x00000010,
-	Immutable			= 0x00000020,
-	AddStructReferencedObjects = 0x00000040,
-	RequiredAPI			= 0x00000200,
-	NetSerializeNative	= 0x00000400,
-	SerializeNative		= 0x00000800,
-	CopyNative			= 0x00001000,
-	IsPlainOldData		= 0x00002000,
-	NoDestructor			= 0x00004000,
-	ZeroConstructor		= 0x00008000,
-	ExportTextItemNative	= 0x00010000,
-	ImportTextItemNative	= 0x00020000,
-	PostSerializeNative  = 0x00040000,
-	SerializeFromMismatchedTag = 0x00080000,
-	NetDeltaSerializeNative = 0x00100000,
-	PostScriptConstruct     = 0x00200000,
-	NetSharedSerialization = 0x00400000,
-	Trashed = 0x00800000,
-	NewerVersionExists = 0x01000000,
-	CanEditChange = 0x02000000,
-	# Inherit				= HasInstancedReference + Atomic,
-	# ComputedFlags		= NetDeltaSerializeNative + NetSerializeNative + SerializeNative + PostSerializeNative + CopyNative + IsPlainOldData + NoDestructor + ZeroConstructor + IdenticalNative + AddStructReferencedObjects + ExportTextItemNative + ImportTextItemNative + SerializeFromMismatchedTag + PostScriptConstruct + NetSharedSerialization
+    NoFlags = 0x00000000
+    Native = 0x00000001
+    IdenticalNative = 0x00000002
+    HasInstancedReference = 0x00000004
+    NoExport = 0x00000008
+    Atomic = 0x00000010
+    Immutable = 0x00000020
+    AddStructReferencedObjects = 0x00000040
+    RequiredAPI = 0x00000200
+    NetSerializeNative = 0x00000400
+    SerializeNative = 0x00000800
+    CopyNative = 0x00001000
+    IsPlainOldData = 0x00002000
+    NoDestructor = 0x00004000
+    ZeroConstructor = 0x00008000
+    ExportTextItemNative = 0x00010000
+    ImportTextItemNative = 0x00020000
+    PostSerializeNative = 0x00040000
+    SerializeFromMismatchedTag = 0x00080000
+    NetDeltaSerializeNative = 0x00100000
+    PostScriptConstruct = 0x00200000
+    NetSharedSerialization = 0x00400000
+    Trashed = 0x00800000
+    NewerVersionExists = 0x01000000
+    CanEditChange = 0x02000000
+
+    """
+    Inherit			    = HasInstancedReference + Atomic,
+    ComputedFlags		= NetDeltaSerializeNative + NetSerializeNative + SerializeNative + PostSerializeNative + CopyNative +
+                        IsPlainOldData + NoDestructor + ZeroConstructor + IdenticalNative + AddStructReferencedObjects +
+                        ExportTextItemNative + ImportTextItemNative + SerializeFromMismatchedTag + PostScriptConstruct +
+                        NetSharedSerialization
+    """
 
 
 @verify(CONTINUOUS, UNIQUE)

@@ -1,5 +1,6 @@
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Iterator, NamedTuple
+from typing import NamedTuple
 
 
 class ByteMatch(NamedTuple):
@@ -7,7 +8,7 @@ class ByteMatch(NamedTuple):
     value: int
 
     def matches(self, value: int) -> bool:
-        """
+        '''
         Checks if a value matches the byte match.
 
         Args:
@@ -29,7 +30,7 @@ class ByteMatch(NamedTuple):
         False
         >>> ByteMatch(mask=0b00001111, value=0x0d).matches(0x3d)
         True
-        """
+        '''
         return (value & self.mask) == self.value
 
 
@@ -50,7 +51,8 @@ class Pattern:
         Doctests:
         >>> list(Pattern((ByteMatch(mask=255, value=0xad), )).search(memoryview(b'\\xde\\xad\\xbe\\xef')))
         [1]
-        >>> list(Pattern((ByteMatch(mask=255, value=0xad), ByteMatch(mask=255, value=0xbe))).search(memoryview(b'\\xde\\xad\\xbe\\xef')))
+        >>> list(Pattern((ByteMatch(mask=255, value=0xad), ByteMatch(mask=255, value=0xbe)))
+                .search(memoryview(b'\\xde\\xad\\xbe\\xef')))
         [1]
         >>> list(Pattern((ByteMatch(mask=255, value=0xff), )).search(memoryview(b'\\xff\\xde\\xad\\xbe\\xef\\xff')))
         [0, 5]
@@ -75,14 +77,17 @@ def compile_pattern(pattern: str) -> Pattern:
         A tuple of byte matches.
 
     Doctests:
-    >>> compile_pattern('00 01 02 03')
-    Pattern(entries=(ByteMatch(mask=255, value=0), ByteMatch(mask=255, value=1), ByteMatch(mask=255, value=2), ByteMatch(mask=255, value=3)))
+    >>> compile_pattern('00 01 02 03')  # doctest: +NORMALIZE_WHITESPACE
+    Pattern(entries=(ByteMatch(mask=255, value=0),
+        ByteMatch(mask=255, value=1),
+        ByteMatch(mask=255, value=2),
+        ByteMatch(mask=255, value=3)))
     >>> compile_pattern('01 x 02')
     Pattern(entries=(ByteMatch(mask=255, value=1), ByteMatch(mask=0, value=0), ByteMatch(mask=255, value=2)))
     >>> compile_pattern('[01001...]') == Pattern(entries=(ByteMatch(mask=0b11111000, value=0b01001000),))
     True
     """
-    result: list[ByteMatch] = list()
+    result: list[ByteMatch] = []
 
     for byte in pattern.split(' '):
         if byte.startswith('['):  # Bit pattern
@@ -120,10 +125,10 @@ def _parse_bit_pattern(pattern: str) -> ByteMatch:
     ValueError: Unexpected character in bit pattern '0101010a'
     """
     if not pattern.startswith('[') or not pattern.endswith(']'):
-        raise ValueError(f'Invalid bit pattern \'{pattern}\': must start and end with square brackets')
+        raise ValueError(f"Invalid bit pattern '{pattern}': must start and end with square brackets")
     pattern = pattern[1:-1]
     if len(pattern) != 8:
-        raise ValueError(f'Invalid bit pattern \'{pattern}\': must be 8 characters long')
+        raise ValueError(f"Invalid bit pattern '{pattern}': must be 8 characters long")
 
     mask = 0
     value = 0
@@ -138,6 +143,6 @@ def _parse_bit_pattern(pattern: str) -> ByteMatch:
         elif char in ('.', '?', 'x'):
             pass
         else:
-            raise ValueError(f'Unexpected character in bit pattern \'{pattern}\'')
+            raise ValueError(f"Unexpected character in bit pattern '{pattern}'")
 
     return ByteMatch(mask, value)

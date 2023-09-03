@@ -1,8 +1,9 @@
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum, auto
 from itertools import groupby
 from logging import getLogger
-from typing import Any, Callable
+from typing import Any
 
 from ..dissassembly import CodeGrabber, get_fn_stack_size
 from ..lieftools import SECTION_RDATA, SECTION_TEXT, Image
@@ -34,7 +35,7 @@ cache_by_struct_addr: dict[int, ZConstructFnType] = {}
 def discover_z_constructs(image: Image):
     # Find all Z_Construct functions by pattern matching
     z_constructs = list(find_z_constructs(image))
-    print(f"Found {len(z_constructs)} Z_Construct functions and structs")
+    print(f'Found {len(z_constructs)} Z_Construct functions and structs')
 
     # Find the five UECodeGen_Private::ConstructXXX functions that these Z_Construct functions call
     codegen_construct_fns = _group_construct_fns(image, z_constructs)
@@ -44,9 +45,9 @@ def discover_z_constructs(image: Image):
     known_functions: dict[ZConstructFnType, ZConstructInfo] = _categorize_z_construct_calls(image, codegen_construct_fns)
     assert len(known_functions) == 5
 
-    print(f"Found and identified {len(known_functions)} UECodeGen_Private::Construct functions")
+    print(f'Found and identified {len(known_functions)} UECodeGen_Private::Construct functions')
     for fn_type,fn in known_functions.items():
-        print(f"  {fn.amount} calls to ConstructU{fn_type.name} @ 0x{fn.fn_addr:x} (stack size {fn.stack_size})")
+        print(f'  {fn.amount} calls to ConstructU{fn_type.name} @ 0x{fn.fn_addr:x} (stack size {fn.stack_size})')
 
     # Populate the cache
     cache_by_fn_addr.clear()
@@ -65,23 +66,26 @@ def lookup_struct_type_by_struct_addr(addr: int) -> ZConstructFnType|None:
 
 
 def _group_construct_fns(image: Image, z_constructs: list[ZConstruct]) -> list[ZConstructInfo]:
-    """Groups ZConstructs by the function they call.
+    '''Groups ZConstructs by the function they call.
 
     Args:
         z_constructs: The ZConstructs to group.
 
     Returns:
         The grouped ZConstructs, sorted least-called first.
-    """
-    get_call_addr: Callable[[ZConstruct], int] = lambda zc: zc.call_addr # type: ignore
+    '''
+    def get_call_addr(zc: ZConstruct) -> int:
+        return zc.call_addr
+
     results: list[ZConstructInfo] = []
     for call_addr, callers in groupby(sorted(z_constructs, key=get_call_addr), key=get_call_addr):
-        callers = tuple(callers)
+        callers = tuple(callers)  # noqa: PLW2901
         code = CodeGrabber(image.get_stream(call_addr))
         try:
             stack_size = get_fn_stack_size(code)
         except AssertionError:
-            log.warning(f"Failed to get stack size for ZConstruct function @ 0x{call_addr:x} (failed at 0x{code.addr:x}))")
+            log.warning('Failed to get stack size for ZConstruct function @ 0x{call_addr:x} (failed at 0x{code.addr:x}))',
+                        extra=dict(call_addr=call_addr, code=code))
             continue
         results.append(ZConstructInfo(call_addr, stack_size, len(callers), callers))
 
@@ -91,7 +95,7 @@ def _group_construct_fns(image: Image, z_constructs: list[ZConstruct]) -> list[Z
 
 def _categorize_z_construct_calls(image: Image, z_constructs: list[ZConstructInfo]):
     # Analyse structs from each Z_Construct call target to work out which ConstructXXX function it is
-    known_functions: dict[ZConstructFnType, ZConstructInfo] = dict()
+    known_functions: dict[ZConstructFnType, ZConstructInfo] = {}
     for info in z_constructs:
         for caller in info.callers:
             # See if we can uniquely guess the struct type
@@ -99,13 +103,12 @@ def _categorize_z_construct_calls(image: Image, z_constructs: list[ZConstructInf
             if len(struct_types) == 1:
                 # We can, so record this as a known function
                 struct_type = struct_types[0]
-                # print(f"Found {struct_type.__name__} @ 0x{caller.struct_addr:x} (called from 0x{caller.call_addr:x})")
                 enum_type = STRUCT_TO_ENUM[struct_type]
                 known_functions[enum_type] = info
                 break
         else:
             # Unable to guess the struct type, so skip it
-            print(f"Unable to guess struct type for ConstructUXXX @ 0x{info.fn_addr:x}")
+            print(f'Unable to guess struct type for ConstructU... @ 0x{info.fn_addr:x}')
 
     return known_functions
 
@@ -117,7 +120,7 @@ def _guess_possible_struct_types(image: Image, addr: int):
         stream = original_stream.clone()
         try:
             struct = struct_from_stream(struct_type, stream)
-        except:
+        except Exception:
             struct = None
 
         if not struct:
@@ -126,7 +129,7 @@ def _guess_possible_struct_types(image: Image, addr: int):
         try:
             validator(struct, image)
             yield struct_type
-        except Exception:
+        except Exception:  # noqa: S112 - we WANT silent failure here
             continue
 
 
@@ -136,7 +139,8 @@ MAX_ENTRIES = 0x2000
 def _validate_package_params(struct: Any, image: Image):
     assert isinstance(struct, FPackageParams)
     assert image.get_section_name_from_rva(struct.NameUTF8) == SECTION_RDATA
-    assert struct.NumSingletons >= 0 and struct.NumSingletons <= MAX_ENTRIES
+    assert struct.NumSingletons >= 0
+    assert struct.NumSingletons <= MAX_ENTRIES
     if struct.NumSingletons > 0:
         assert image.get_section_name_from_rva(struct.SingletonFuncArrayFn) == SECTION_RDATA
 
@@ -147,9 +151,12 @@ def _validate_class_params(struct: Any, image: Image):
     if struct.ClassConfigNameUTF8:
         assert image.get_section_name_from_rva(struct.ClassConfigNameUTF8) == SECTION_RDATA
 
-    assert struct.NumFunctions >= 0 and struct.NumFunctions <= MAX_ENTRIES
-    assert struct.NumProperties >= 0 and struct.NumProperties <= MAX_ENTRIES
-    assert struct.NumDependencySingletons >= 0 and struct.NumDependencySingletons <= MAX_ENTRIES
+    assert struct.NumFunctions >= 0
+    assert struct.NumFunctions <= MAX_ENTRIES
+    assert struct.NumProperties >= 0
+    assert struct.NumProperties <= MAX_ENTRIES
+    assert struct.NumDependencySingletons >= 0
+    assert struct.NumDependencySingletons <= MAX_ENTRIES
 
     if struct.NumFunctions > 0:
         assert image.get_section_name_from_rva(struct.FunctionLinkArray) == SECTION_RDATA
@@ -167,7 +174,8 @@ def _validate_struct_params(struct: Any, image: Image):
     if struct.StructOpsFunc:
         assert image.get_section_name_from_rva(struct.StructOpsFunc) == SECTION_TEXT
     assert image.get_section_name_from_rva(struct.NameUTF8) == SECTION_RDATA
-    assert struct.NumProperties >= 0 and struct.NumProperties <= MAX_ENTRIES
+    assert struct.NumProperties >= 0
+    assert struct.NumProperties <= MAX_ENTRIES
     if struct.NumProperties > 0:
         assert image.get_section_name_from_rva(struct.PropertyArray) == SECTION_RDATA
     assert struct.SizeOf <= 0x1000000
@@ -181,7 +189,8 @@ def _validate_enum_params(struct: Any, image: Image):
         assert image.get_section_name_from_rva(struct.DisplayNameFn) == SECTION_TEXT
     assert image.get_section_name_from_rva(struct.NameUTF8) == SECTION_RDATA
     assert image.get_section_name_from_rva(struct.CppTypeUTF8) == SECTION_RDATA
-    assert struct.NumEnumerators >= 0 and struct.NumEnumerators <= MAX_ENTRIES
+    assert struct.NumEnumerators >= 0
+    assert struct.NumEnumerators <= MAX_ENTRIES
     if struct.NumEnumerators > 0:
         assert image.get_section_name_from_rva(struct.EnumeratorParams) == SECTION_RDATA
 
@@ -197,7 +206,8 @@ def _validate_function_params(struct: Any, image: Image):
     if struct.DelegateName:
         assert image.get_section_name_from_rva(struct.DelegateName) == SECTION_RDATA
     assert struct.StructureSize <= 0x1000000
-    assert struct.NumProperties >= 0 and struct.NumProperties <= MAX_ENTRIES
+    assert struct.NumProperties >= 0
+    assert struct.NumProperties <= MAX_ENTRIES
     if struct.NumProperties > 0:
         assert image.get_section_name_from_rva(struct.PropertyArray) == SECTION_RDATA
 

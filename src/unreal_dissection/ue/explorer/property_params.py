@@ -1,29 +1,35 @@
+# ruff: noqa: N802 - allow function names to include type names
+
 from __future__ import annotations
 
-from typing import Iterator
+from typing import TYPE_CHECKING
 
-from ...discovery.core import Discovery
 from ...discovery.function import FunctionDiscovery
 from ...discovery.string import Utf8Discovery
 from ...discovery.system import register_explorer
-from ...lieftools import Image
-from ..functions import ZConstructFnType, parse_ZConstruct_fn
+from ..functions import ZConstructFnType, parse_ZConstruct
 from ..native_enums import EPropertyGenFlags
 from ..native_structs import DynamicPropertyParams
 
+if TYPE_CHECKING:
+        from collections.abc import Iterator
+
+        from ...discovery.core import Discovery
+        from ...lieftools import Image
+
 
 @register_explorer(DynamicPropertyParams)
-def explore_DynamicPropertyParams(subject: DynamicPropertyParams, image: Image) -> Iterator[Discovery]:
+def explore_DynamicPropertyParams(subject: DynamicPropertyParams, _image: Image) -> Iterator[Discovery]:
         yield Utf8Discovery(subject.NameUTF8_ptr)
         yield Utf8Discovery(subject.RepNotifyFuncUTF8_ptr)
 
         # Handle extra values on known types
         match subject.Flags.value:
             case EPropertyGenFlags.Byte | EPropertyGenFlags.Enum:
-                yield FunctionDiscovery(subject.EnumFunc_ptr, parser_fn=parse_ZConstruct_fn, info=ZConstructFnType.Enum)
+                yield FunctionDiscovery(subject.EnumFunc_ptr, parser_fn=parse_ZConstruct, info=ZConstructFnType.Enum)
             case EPropertyGenFlags.Class:
-                yield FunctionDiscovery(subject.MetaClassFunc_ptr, parser_fn=parse_ZConstruct_fn, info=ZConstructFnType.Class)
-                yield FunctionDiscovery(subject.ClassFunc_ptr, parser_fn=parse_ZConstruct_fn, info=ZConstructFnType.Class)
+                yield FunctionDiscovery(subject.MetaClassFunc_ptr, parser_fn=parse_ZConstruct, info=ZConstructFnType.Class)
+                yield FunctionDiscovery(subject.ClassFunc_ptr, parser_fn=parse_ZConstruct, info=ZConstructFnType.Class)
             case EPropertyGenFlags.Delegate:
                 # TODO: SignatureFunctionFunc_ptr
                 # TODO: SetBitFunc_ptr
@@ -37,7 +43,7 @@ def explore_DynamicPropertyParams(subject: DynamicPropertyParams, image: Image) 
             case EPropertyGenFlags.InlineMulticastDelegate | EPropertyGenFlags.SparseMulticastDelegate:
                 # TODO: SignatureFunctionFunc_ptr
                 pass
-            case EPropertyGenFlags.Object | EPropertyGenFlags.WeakObject | EPropertyGenFlags.LazyObject | EPropertyGenFlags.SoftObject:
+            case EPropertyGenFlags.Object | EPropertyGenFlags.WeakObject | EPropertyGenFlags.LazyObject | EPropertyGenFlags.SoftObject:  # noqa: E501
                 # TODO: ClassFunc_ptr
                 pass
             case EPropertyGenFlags.SoftClass:

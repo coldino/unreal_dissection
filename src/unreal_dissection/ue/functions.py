@@ -1,14 +1,20 @@
+# ruff: noqa: N802 - allow function names to include type names
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 from logging import getLogger
-from typing import Any, Iterator
+from typing import TYPE_CHECKING, Any
 
-from ..discovery.core import Artefact, Discovery
 from ..discovery.function import FunctionArtefact, TrampolineArtefact
-from ..dissassembly import CodeGrabber, UnexpectedInstruction, parse_cached_call, parse_trampolines
-from .native_enums import EClassCastFlags, EClassFlags
+from ..dissassembly import CodeGrabber, UnexpectedInstructionError, parse_cached_call, parse_trampolines
 from .z_construct import ZConstructFnType, lookup_struct_type_by_fn_addr
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from ..discovery.core import Artefact, Discovery
+    from .native_enums import EClassCastFlags, EClassFlags
 
 log = getLogger(__name__)
 
@@ -30,8 +36,8 @@ class StaticClassFnArtefact(FunctionArtefact):
     within_class_fn_ptr: int
 
 
-def parse_StaticClass_fn(code: CodeGrabber, _info: Any|None) -> Iterator[Artefact|Discovery]:
-    """Parse a ::StaticClass function that calls GetPrivateStaticClassBody."""
+def parse_StaticClass(code: CodeGrabber, _info: Any|None) -> Iterator[Artefact|Discovery]:
+    '''Parse a ::StaticClass function that calls GetPrivateStaticClassBody.'''
     # Record any trampolines
     jumps = list(parse_trampolines(code))
 
@@ -41,7 +47,7 @@ def parse_StaticClass_fn(code: CodeGrabber, _info: Any|None) -> Iterator[Artefac
     end_addr = code.addr
 
     # Create the main artefact
-    artefact = StaticClassFnArtefact(start_addr, end_addr, parse_StaticClass_fn, *parsed.parameters) # type: ignore
+    artefact = StaticClassFnArtefact(start_addr, end_addr, parse_StaticClass, *parsed.parameters) # type: ignore
 
     # Return any tramplines and the main artefact
     yield from (TrampolineArtefact(jmp, jmp+5, artefact) for jmp in jumps)
@@ -56,8 +62,8 @@ class ZConstructFnArtefact(FunctionArtefact):
     params_struct_ptr: int
 
 
-def parse_ZConstruct_fn(code: CodeGrabber, info: ZConstructFnType|None) -> Iterator[Artefact|Discovery]:
-    """Parse a Z_Construct_XXX_XXX function that calls a UCodeGen_Private::ConstructXXX."""
+def parse_ZConstruct(code: CodeGrabber, info: ZConstructFnType|None) -> Iterator[Artefact|Discovery]:
+    '''Parse a Z_Construct_XXX_XXX function that calls a UCodeGen_Private::ConstructXXX.'''
     # assert info is not None
 
     # Record any trampolines
@@ -69,11 +75,11 @@ def parse_ZConstruct_fn(code: CodeGrabber, info: ZConstructFnType|None) -> Itera
         parsed = parse_cached_call(code)
     except AssertionError:
         # This is not a typical Z_Construct function, so we can't parse it
-        log.warn('Failed to parse Z_Construct function at 0x%x', start_addr)
+        log.warning('Failed to parse Z_Construct function at 0x%x', start_addr)
         return
-    except UnexpectedInstruction:
+    except UnexpectedInstructionError:
         # This is not a typical Z_Construct function, so we can't parse it
-        log.warn('Failed to parse Z_Construct function at 0x%x', start_addr)
+        log.warning('Failed to parse Z_Construct function at 0x%x', start_addr)
         return
     end_addr = code.addr
 
@@ -84,7 +90,7 @@ def parse_ZConstruct_fn(code: CodeGrabber, info: ZConstructFnType|None) -> Itera
         return
 
     # Create the main artefact
-    artefact = ZConstructFnArtefact(start_addr, end_addr, parse_ZConstruct_fn, info, parsed.called_fn_addr, *parsed.parameters)
+    artefact = ZConstructFnArtefact(start_addr, end_addr, parse_ZConstruct, info, parsed.called_fn_addr, *parsed.parameters)
 
     # Return any tramplines and the main artefact
     yield from (TrampolineArtefact(jmp, jmp+5, artefact) for jmp in jumps)

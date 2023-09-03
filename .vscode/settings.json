@@ -1,19 +1,33 @@
 {
+    "python.testing.pytestArgs": [ "tests" ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "python.testing.cwd": "${workspaceFolder}",
     "python.analysis.diagnosticMode": "workspace",
-    "python.analysis.typeCheckingMode": "strict",
+    "python.analysis.typeCheckingMode": "basic",
     "[python]": {
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
+            "source.fixAll": true,
             "source.organizeImports": true
         }
     },
     "cSpell.words": [
+        "chkstk",
+        "displ",
+        "Interp",
+        "nbytes",
+        "Parms",
         "PEFile",
         "pkbuffer",
         "pread",
         "Ptrs",
         "Purlovia",
+        "qword",
+        "qwords",
         "rdata",
+        "RETNQ",
+        "toreadonly",
         "Ubergraph",
         "UE",
         "VTable",
