@@ -6,9 +6,9 @@ from dataclasses import dataclass
 from logging import getLogger
 from typing import TYPE_CHECKING, Any
 
-from ..discovery.function import FunctionArtefact, TrampolineArtefact
+from ..discovery.function import FunctionArtefact, TrampolineArtefact, UnparsableFunctionArtefact
 from ..dissassembly import CodeGrabber, UnexpectedInstructionError, parse_cached_call, parse_trampolines
-from .z_construct import ZConstructFnType, lookup_struct_type_by_fn_addr
+from .z_construct import ZConstructFnType, lookup_construct_fn_type, lookup_struct_type_by_fn_addr
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -64,8 +64,6 @@ class ZConstructFnArtefact(FunctionArtefact):
 
 def parse_ZConstruct(code: CodeGrabber, info: ZConstructFnType|None) -> Iterator[Artefact|Discovery]:
     '''Parse a Z_Construct_XXX_XXX function that calls a UCodeGen_Private::ConstructXXX.'''
-    # assert info is not None
-
     # Record any trampolines
     jumps = list(parse_trampolines(code))
 
@@ -75,22 +73,44 @@ def parse_ZConstruct(code: CodeGrabber, info: ZConstructFnType|None) -> Iterator
         parsed = parse_cached_call(code)
     except AssertionError:
         # This is not a typical Z_Construct function, so we can't parse it
-        log.warning('Failed to parse Z_Construct function at 0x%x', start_addr)
-        return
+        parsed = None
     except UnexpectedInstructionError:
         # This is not a typical Z_Construct function, so we can't parse it
-        log.warning('Failed to parse Z_Construct function at 0x%x', start_addr)
-        return
+        parsed = None
     end_addr = code.addr
 
-    # Look up the struct type from the called function
-    info = lookup_struct_type_by_fn_addr(start_addr)
-    if info is None:
-        # This is not a typical Z_Construct function, so we can't parse it
-        return
+    known_type: ZConstructFnType|None = None
+    called_fn_type: ZConstructFnType|None = None
 
-    # Create the main artefact
-    artefact = ZConstructFnArtefact(start_addr, end_addr, parse_ZConstruct, info, parsed.called_fn_addr, *parsed.parameters)
+    if parsed:
+        # Look up the type from previously categorised functions
+        known_type = lookup_struct_type_by_fn_addr(start_addr)
+        if known_type is None:
+            # This is not a typical Z_Construct function, so we can't parse it
+            parsed = None
+
+    if parsed:
+        # Ensure the called function matches
+        called_fn_type = lookup_construct_fn_type(parsed.called_fn_addr)
+        if called_fn_type is None:
+            # This function does not call a UCodeGen_Private::ConstructXXX function, so we can't parse it
+            parsed = None
+
+    if parsed:
+        # Bail if we have mismatched types
+        if known_type != called_fn_type:
+            raise ValueError(f'Expected {known_type} but got {called_fn_type} for Z_Construct function at 0x{start_addr:x}')
+        if known_type != info:
+            raise ValueError(f'Expected {known_type} but got {info} for Z_Construct function at 0x{start_addr:x}')
+
+        # Create the main artefact
+        artefact = ZConstructFnArtefact(
+            start_addr, end_addr,
+            parse_ZConstruct, known_type, # type: ignore
+            parsed.called_fn_addr, *parsed.parameters)
+    else:
+        # Record the function as unparsable
+        artefact = UnparsableFunctionArtefact(start_addr, end_addr, parse_ZConstruct)
 
     # Return any tramplines and the main artefact
     yield from (TrampolineArtefact(jmp, jmp+5, artefact) for jmp in jumps)

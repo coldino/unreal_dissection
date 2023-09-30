@@ -1,13 +1,15 @@
 from logging import getLogger
 
 from .discovery.system import DiscoverySystem
-from .explorers import done  # noqa: F401
+from .explorers import done  # type: ignore  # noqa: F401
 from .lieftools import Image
 from .ue.analyse import analyse_image
 from .ue.discovery.function import ZConstructFunctionDiscovery
 
 log = getLogger('unreal_dissection')
 
+def load_image(path: str) -> Image:
+    return Image(path)
 
 def fully_discover(image: Image) -> DiscoverySystem:
     discovery = DiscoverySystem(image)

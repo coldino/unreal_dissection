@@ -13,7 +13,6 @@ from ...struct import get_struct_size_aligned
 from ..discovery.function import ZConstructFunctionDiscovery
 from ..functions import parse_StaticClass
 from ..native_structs import (
-    DynamicPropertyParams,
     FClassFunctionLinkInfo,
     FClassParams,
     FEnumeratorParams,
@@ -22,6 +21,7 @@ from ..native_structs import (
     FImplementedInterfaceParams,
     FPackageParams,
     FStructParams,
+    PropertyParams,
 )
 from ..z_construct import ZConstructFnType
 
@@ -59,7 +59,7 @@ def explore_FClassParams(subject: FClassParams, image: Image) -> Iterator[Discov
 
     if subject.PropertyArray:
         for ptr in image.get_stream(subject.PropertyArray).ptr_array(subject.NumProperties):
-            yield StructDiscovery(ptr, DynamicPropertyParams)
+            yield StructDiscovery(ptr, PropertyParams)
 
     if subject.ImplementedInterfaceArray:
         struct_size = get_struct_size_aligned(FImplementedInterfaceParams)
@@ -75,7 +75,7 @@ def explore_FStructParams(subject: FStructParams, image: Image) -> Iterator[Disc
 
     if subject.PropertyArray:
         for ptr in image.get_stream(subject.PropertyArray).ptr_array(subject.NumProperties):
-            yield StructDiscovery(ptr, DynamicPropertyParams)
+            yield StructDiscovery(ptr, PropertyParams)
 
 
 @register_explorer(FEnumParams)
@@ -100,7 +100,7 @@ def explore_FFunctionParams(subject: FFunctionParams, image: Image) -> Iterator[
 
     if subject.PropertyArray:
         for ptr in image.get_stream(subject.PropertyArray).ptr_array(subject.NumProperties):
-            yield StructDiscovery(ptr, DynamicPropertyParams)
+            yield StructDiscovery(ptr, PropertyParams)
 
 
 @register_explorer(FEnumeratorParams)

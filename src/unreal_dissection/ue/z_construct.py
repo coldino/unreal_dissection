@@ -31,6 +31,7 @@ class ZConstructInfo:
 
 cache_by_fn_addr: dict[int, ZConstructFnType] = {}
 cache_by_struct_addr: dict[int, ZConstructFnType] = {}
+cache_by_called_fn_addr: dict[int, ZConstructFnType] = {}
 
 def discover_z_constructs(image: Image):
     # Find all Z_Construct functions by pattern matching
@@ -52,6 +53,7 @@ def discover_z_constructs(image: Image):
     # Populate the cache
     cache_by_fn_addr.clear()
     for fn_type,fn in known_functions.items():
+        cache_by_called_fn_addr[fn.fn_addr] = fn_type
         for caller in fn.callers:
             cache_by_fn_addr[caller.fn_addr] = fn_type
             cache_by_struct_addr[caller.struct_addr] = fn_type
@@ -59,11 +61,16 @@ def discover_z_constructs(image: Image):
     return (z_constructs, known_functions)
 
 def lookup_struct_type_by_fn_addr(addr: int) -> ZConstructFnType|None:
+    '''Look up the ZConstructFnType for a Z_Construct_XXX_XXX function.'''
     return cache_by_fn_addr.get(addr)
 
 def lookup_struct_type_by_struct_addr(addr: int) -> ZConstructFnType|None:
-    return cache_by_fn_addr.get(addr)
+    '''Look up the ZConstructFnType for a struct that is passed to a Z_Construct_XXX_XXX function.'''
+    return cache_by_struct_addr.get(addr)
 
+def lookup_construct_fn_type(addr: int) -> ZConstructFnType|None:
+    '''Look up the ZConstructFnType for a ConstructXXX function.'''
+    return cache_by_called_fn_addr.get(addr)
 
 def _group_construct_fns(image: Image, z_constructs: list[ZConstruct]) -> list[ZConstructInfo]:
     '''Groups ZConstructs by the function they call.

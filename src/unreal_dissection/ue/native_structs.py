@@ -99,7 +99,7 @@ class FClassFunctionLinkInfo:
     FuncNameUTF8: dcs.U64 # ptr to name
 
 
-class DynamicPropertyParams(DynamicStruct):
+class PropertyParams(DynamicStruct):
     def deserialize(self, stream: MemoryStream) -> None:
         self.NameUTF8_ptr = stream.u64()
         self.RepNotifyFuncUTF8_ptr = stream.u64()
@@ -119,6 +119,7 @@ class DynamicPropertyParams(DynamicStruct):
             case EPropertyGenFlags.Bool:
                 self.ElementSize = stream.u32()
                 self.SizeOfOuter = stream.u64()
+                self.SetBitFunc_ptr = stream.u64()
             case EPropertyGenFlags.Byte | EPropertyGenFlags.Enum:
                 self.EnumFunc_ptr = stream.u64()
             case EPropertyGenFlags.Class:
@@ -126,7 +127,6 @@ class DynamicPropertyParams(DynamicStruct):
                 self.ClassFunc_ptr = stream.u64()
             case EPropertyGenFlags.Delegate:
                 self.SignatureFunctionFunc_ptr = stream.u64()
-                self.SetBitFunc_ptr = stream.u64()
             case EPropertyGenFlags.FieldPath:
                 self.PropertyClassFunc_ptr = stream.u64()
             case EPropertyGenFlags.Interface:

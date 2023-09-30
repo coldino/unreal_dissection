@@ -18,11 +18,14 @@ class TrampolineArtefact(Artefact):
     '''A jump to a function discovered by the extractor.'''
     target: FunctionArtefact
 
-
 @dataclass(frozen=True, unsafe_hash=True, eq=True, slots=True, repr=False)
 class FunctionArtefact(Artefact):
     '''A parsed function discovered by the extractor.'''
     fn_type: FunctionParserFn
+
+@dataclass(frozen=True, unsafe_hash=True, eq=True, slots=True, repr=False)
+class UnparsableFunctionArtefact(FunctionArtefact):
+    '''A function that could not be parsed.'''
 
 
 @dataclass(frozen=True, unsafe_hash=True, eq=True, slots=True, repr=False)

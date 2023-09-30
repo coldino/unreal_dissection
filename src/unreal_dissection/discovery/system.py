@@ -72,7 +72,7 @@ class DiscoverySystem:
                 case DiscoveryComparison.NoMatch:
                     log.exception('Conflicting discovery @ 0x%x: %r and %r', discovery.ptr, discovery, pending)
                     raise ValueError(
-                        f'Conflicting discovery @ 0x{discovery.ptr:x}: {discovery} and {pending}',
+                        f'Conflicting discovery @ 0x{discovery.ptr:x}: {discovery!s} and {pending!s}',
                         discovery,
                         pending,
                     )
@@ -103,7 +103,7 @@ class DiscoverySystem:
                 break
         else:
             # No discoveries are ready to process
-            log.info('process_one called but no discoveries are ready')
+            log.warning('process_one called but no discoveries are ready')
             return False
 
         # Remove the discovery from the queue and process it
@@ -201,7 +201,7 @@ class DiscoverySystem:
                 log.warning('Unhandled discovery result %r for %r', thing, for_discovery)
 
 
-type AnyExplorerFn = Callable[[Any, Image], Iterator[Discovery]] # type: ignore
+type AnyExplorerFn = Callable[[Any, Image], Iterator[Discovery]]
 
 _registered_explorers: dict[str, AnyExplorerFn] = {}
 

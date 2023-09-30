@@ -138,6 +138,7 @@ class MemoryStream:
         end = start + limit
         memory_slice = self._memory[start:end]
         size = len(memory_slice)
+
         for i in range(len(memory_slice)):
             self._pos += 1
             if memory_slice[i] == 0:
@@ -146,7 +147,7 @@ class MemoryStream:
         else:
             raise ValueError('String too long')
 
-        text = bytes(memory_slice[:size]).decode('utf-8')
+        text = memory_slice[:size].tobytes().decode('utf-8')
 
         if allow_chars is not None:
             for c in text:
@@ -167,7 +168,7 @@ class MemoryStream:
                 break
 
         try:
-            text = bytes(memory_slice[:size]).decode('utf-8')
+            text = memory_slice[:size].tobytes().decode('utf-8')
         except UnicodeDecodeError:
             return None
 
@@ -200,7 +201,7 @@ class MemoryStream:
             raise ValueError('String too long')
 
         # Decode the string as UTF16
-        text = bytes(memory_slice[:size*2]).decode('utf-16')
+        text = memory_slice[:size*2].tobytes().decode('utf-16')
 
         # Check for disallowed characters
         if allow_chars is not None:
@@ -226,7 +227,7 @@ class MemoryStream:
 
         # Decode the string as UTF16
         try:
-            text = bytes(memory_slice[:size*2]).decode('utf-16')
+            text = memory_slice[:size*2].tobytes().decode('utf-16')
         except UnicodeDecodeError:
             return None
 

@@ -4,7 +4,7 @@
     "python.testing.pytestEnabled": true,
     "python.testing.cwd": "${workspaceFolder}",
     "python.analysis.diagnosticMode": "workspace",
-    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.typeCheckingMode": "strict",
     "[python]": {
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
@@ -27,6 +27,9 @@
         "qwords",
         "rdata",
         "RETNQ",
+        "struct",
+        "structs",
+        "tobytes",
         "toreadonly",
         "Ubergraph",
         "UE",

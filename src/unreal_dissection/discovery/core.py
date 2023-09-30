@@ -22,7 +22,7 @@ class DiscoveryComparison(Enum):
     Replace = auto()
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Artefact:
     '''Base class for all artefacts discovered by the extractor.'''
     start_addr: int
