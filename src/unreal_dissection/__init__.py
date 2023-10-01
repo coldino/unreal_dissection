@@ -15,7 +15,7 @@ def fully_discover(image: Image) -> DiscoverySystem:
     discovery = DiscoverySystem(image)
 
     log.info('Beginning early analysis...')
-    analysis = analyse_image(image)
+    analysis = analyse_image(image, discovery.ctx)
 
     log.info('Performing discovery...')
     # Queue everything found

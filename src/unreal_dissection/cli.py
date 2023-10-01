@@ -21,7 +21,7 @@ def format_type(value: str) -> FormatType:
 
 class Args(tap.TypedArgs):
     exe: Path = tap.arg(positional=True, help='The executable to analyse')
-    output: Path = tap.arg('-o', help='The output directory (wiped before starting)')
+    # output: Path = tap.arg('-o', help='The output directory (wiped before starting)')
     no_wipe: bool = tap.arg('--no-wipe', help='Do not wipe the output directory before starting')
     format: FormatType = tap.arg('-f', '--format', default=FormatType.Json, help='The output format')
 

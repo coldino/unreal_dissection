@@ -2,6 +2,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 
 from ..lieftools import Image
+from ..parsing import ParsingContext
 from ..struct import struct_from_stream
 from .core import Artefact, Discovery
 
@@ -16,9 +17,9 @@ class StructArtefact[T](Artefact):
 class StructDiscovery(Discovery):
     struct_type: type
 
-    def perform(self, image: Image) -> Iterator[Artefact|Discovery]:
+    def perform(self, image: Image, ctx: ParsingContext) -> Iterator[Artefact|Discovery]:
         start = self.ptr
         stream = image.get_stream(self.ptr)
-        data = struct_from_stream(self.struct_type, stream)
+        data = struct_from_stream(self.struct_type, stream, ctx)
         yield StructArtefact(start, stream.addr, self.struct_type, data)
 

@@ -7,6 +7,7 @@ import dataclasses_struct as dcs
 from dataclasses_struct import get_struct_size
 
 if TYPE_CHECKING:
+    from .parsing import ParsingContext
     from .stream import MemoryStream
 
 
@@ -16,15 +17,15 @@ class DynamicStruct(metaclass=ABCMeta):
     _base_addr: int
 
     @abstractmethod
-    def deserialize(self, stream: MemoryStream) -> None: ...
+    def deserialize(self, stream: MemoryStream, ctx: ParsingContext) -> None: ...
 
     @classmethod
-    def from_stream(cls, stream: MemoryStream) -> Self:
+    def from_stream(cls, stream: MemoryStream, ctx: ParsingContext) -> Self:
         '''Create an instance of this dynamic struct type by deserializing it from a MemoryStream.'''
         obj = cls()
-        obj._base_addr = stream.addr  # noqa: SLF001
-        obj.deserialize(stream)
-        obj._deserialized = True  # noqa: SLF001
+        obj._base_addr = stream.addr  # noqa: SLF001 - actually our own field
+        obj.deserialize(stream, ctx)
+        obj._deserialized = True  # noqa: SLF001 - actually our own field
 
         return obj
 
@@ -46,7 +47,7 @@ class DynamicStruct(metaclass=ABCMeta):
         p.text(')')
 
 
-def struct_from_stream[T](cls: type[T], stream: MemoryStream) -> T:
+def struct_from_stream[T](cls: type[T], stream: MemoryStream, ctx: ParsingContext) -> T:
     '''Create an instance of a struct by deserializing it from a MemoryStream.'''
     if dcs.is_dataclass_struct(cls):
         size = dcs.get_struct_size(cls)
@@ -54,7 +55,7 @@ def struct_from_stream[T](cls: type[T], stream: MemoryStream) -> T:
         return cast(T, cls.from_packed(data))
 
     if issubclass(cls, DynamicStruct):
-        return cls.from_stream(stream)
+        return cls.from_stream(stream, ctx)
 
     raise TypeError(f'{cls} cannot be read directly from a stream')
 

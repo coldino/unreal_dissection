@@ -21,6 +21,9 @@ class Image:
         self.binary = binary
         self.base = binary.imagebase
 
+        # Extract version information
+        self._extract_version()
+
         # Create a map of section names to section objects
         self._sections = {
             cast(str, cast(lief.Section, section).name): cast(lief.Section, section)

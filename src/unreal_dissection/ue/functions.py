@@ -7,13 +7,14 @@ from logging import getLogger
 from typing import TYPE_CHECKING, Any
 
 from ..discovery.function import FunctionArtefact, TrampolineArtefact, UnparsableFunctionArtefact
-from ..dissassembly import CodeGrabber, UnexpectedInstructionError, parse_cached_call, parse_trampolines
+from ..dissassembly import CachedCallResult, CodeGrabber, UnexpectedInstructionError, parse_cached_call, parse_trampolines
 from .z_construct import ZConstructFnType, lookup_construct_fn_type, lookup_struct_type_by_fn_addr
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from ..discovery.core import Artefact, Discovery
+    from ..parsing import ParsingContext
     from .native_enums import EClassCastFlags, EClassFlags
 
 log = getLogger(__name__)
@@ -36,7 +37,7 @@ class StaticClassFnArtefact(FunctionArtefact):
     within_class_fn_ptr: int
 
 
-def parse_StaticClass(code: CodeGrabber, _info: Any|None) -> Iterator[Artefact|Discovery]:
+def parse_StaticClass(code: CodeGrabber, _ctx: ParsingContext, _info: Any|None) -> Iterator[Artefact|Discovery]:
     '''Parse a ::StaticClass function that calls GetPrivateStaticClassBody.'''
     # Record any trampolines
     jumps = list(parse_trampolines(code))
@@ -62,7 +63,7 @@ class ZConstructFnArtefact(FunctionArtefact):
     params_struct_ptr: int
 
 
-def parse_ZConstruct(code: CodeGrabber, info: ZConstructFnType|None) -> Iterator[Artefact|Discovery]:
+def parse_ZConstruct(code: CodeGrabber, _ctx: ParsingContext, info: ZConstructFnType|None) -> Iterator[Artefact|Discovery]:
     '''Parse a Z_Construct_XXX_XXX function that calls a UCodeGen_Private::ConstructXXX.'''
     # Record any trampolines
     jumps = list(parse_trampolines(code))

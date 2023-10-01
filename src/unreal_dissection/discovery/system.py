@@ -1,10 +1,11 @@
-import sys
 from collections import defaultdict
 from collections.abc import Callable, Iterator
+from functools import singledispatch
 from logging import getLogger
 from typing import Any
 
 from ..lieftools import Image
+from ..parsing import ParsingContext
 from .core import Artefact, Discoverable, Discovery, DiscoveryComparison
 from .function import FunctionArtefact, FunctionParserFn, TrampolineArtefact
 from .string import StringArtefact
@@ -17,6 +18,8 @@ except ImportError:
     from pprint import pformat as pretty
 
 log = getLogger(__name__)
+
+NO_DEFAULT = object()
 
 class DiscoverySystem:
     '''A system for dynamic discovery within in a binary image.
@@ -50,6 +53,18 @@ class DiscoverySystem:
         self.found_functions = {}
         self.found_functions_by_type = defaultdict(list)
         self.found_functions_by_type_and_ptr = defaultdict(dict)
+
+        ue_version_string = image.version_string
+        if not ue_version_string:
+            raise ValueError('No version string found')
+        ue_version_tuple = image.version_tuple
+        if not ue_version_tuple:
+            raise ValueError('No version tuple found')
+
+        self.ctx = ParsingContext(
+            ue_version_string=ue_version_string,
+            ue_version_tuple=ue_version_tuple,
+        )
 
     def queue(self, discovery: Discovery):
         '''Add a pending discovery to the queue.
@@ -110,7 +125,7 @@ class DiscoverySystem:
         del self.pending[discovery.ptr]
         log.debug('Processing discovery %s', discovery)
         try:
-            for thing in discovery.perform(self.image):
+            for thing in discovery.perform(self.image, self.ctx):
                 if isinstance(thing, Discovery):
                     self.queue(thing)
                 else:
@@ -120,7 +135,7 @@ class DiscoverySystem:
                     self._discover(thing)
         except Exception as e:
             log.exception('Error while processing %s', pretty(discovery), exc_info=e)
-            sys.exit(1)
+            raise
 
         return True
 
@@ -144,12 +159,32 @@ class DiscoverySystem:
                 return artefact
         return None
 
-    def get_string(self, ptr: int) -> StringArtefact | None:
+    def get_string_artefact(self, ptr: int) -> StringArtefact | None:
         '''Get the string artefact for a given pointer.
 
         This will return the string artefact for the given pointer, or None if no string is found.
         '''
         return self.found_strings.get(ptr, None)
+
+    @singledispatch
+    def get_string[T](self, ptr: int, *, default: T=NO_DEFAULT) -> str | T:
+        '''Get the string for a given pointer.
+
+        This will return the string for the given pointer, or None if no string is found.
+        '''
+        artefact = self.get_string_artefact(ptr)
+        if artefact is None:
+            if default is NO_DEFAULT:
+                raise ValueError(f'No string found @ 0x{ptr:x}')
+            return default
+        return artefact.string
+
+    @get_string.register
+    def _(self, ptr: int) -> str:
+        artefact = self.get_string_artefact(ptr)
+        if artefact is None:
+            raise ValueError(f'No string found @ 0x{ptr:x}')
+        return artefact.string
 
     def get_struct[T](self, ptr: int, struct_type: type[T]) -> StructArtefact[T] | None:
         '''Get the struct artefact for a given pointer.
@@ -177,7 +212,7 @@ class DiscoverySystem:
                     self.queue(discovery)
         except Exception as e:
             log.exception('Error while discovering %s', pretty(discoverable), exc_info=e)
-            sys.exit(1)
+            raise
 
 
     def _register_found(self, thing: Artefact, for_discovery: Discovery):

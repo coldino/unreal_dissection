@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from ..lieftools import Image
+from ..parsing import ParsingContext
 from .core import Artefact, Discovery
 
 
@@ -23,7 +24,7 @@ class StringArtefact(Artefact):
 
 @dataclass(frozen=True, unsafe_hash=True, eq=True, slots=True, repr=False)
 class Utf8Discovery(Discovery):
-    def perform(self, image: Image) -> Iterator[Artefact|Discovery]:
+    def perform(self, image: Image, ctx: ParsingContext) -> Iterator[Artefact|Discovery]:  # noqa: ARG002
         start = self.ptr
         stream = image.get_stream(self.ptr)
         string = stream.utf8zt()
@@ -32,7 +33,7 @@ class Utf8Discovery(Discovery):
 
 @dataclass(frozen=True, unsafe_hash=True, eq=True, slots=True, repr=False)
 class Utf16Discovery(Discovery):
-    def perform(self, image: Image) -> Iterator[Artefact|Discovery]:
+    def perform(self, image: Image, ctx: ParsingContext) -> Iterator[Artefact|Discovery]:  # noqa: ARG002
         start = self.ptr
         stream = image.get_stream(self.ptr)
         string = stream.utf16zt()

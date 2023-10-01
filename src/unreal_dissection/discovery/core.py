@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from ..lieftools import Image
+    from ..parsing import ParsingContext
 
 
 @runtime_checkable
@@ -57,7 +58,7 @@ class Discovery(metaclass=ABCMeta):
         return True
 
     @abstractmethod
-    def perform(self, image: Image) -> Iterator[Artefact|Discovery]:
+    def perform(self, image: Image, ctx: ParsingContext) -> Iterator[Artefact|Discovery]:
         '''Perform this discovery, yielding any artefacts or further discoveries.'''
         raise NotImplementedError
 

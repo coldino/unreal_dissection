@@ -6,6 +6,7 @@ from logging import getLogger
 from typing import TYPE_CHECKING, Any
 
 from ..dissassembly import CodeGrabber
+from ..parsing import ParsingContext
 from .core import Artefact, Discovery, DiscoveryComparison
 
 if TYPE_CHECKING:
@@ -66,9 +67,9 @@ class FunctionDiscovery(Discovery):
         # If we get here, the info matches
         return DiscoveryComparison.Keep
 
-    def perform(self, image: Image) -> Iterator[Artefact|Discovery]:
+    def perform(self, image: Image, ctx: ParsingContext) -> Iterator[Artefact|Discovery]:
         code = CodeGrabber(image.get_stream(self.ptr), 2048)
-        yield from self.parser_fn(code, self.info)
+        yield from self.parser_fn(code, ctx, self.info)
 
 
-FunctionParserFn = Callable[[CodeGrabber, Any|None], Iterator[Artefact|Discovery]]
+FunctionParserFn = Callable[[CodeGrabber, ParsingContext, Any|None], Iterator[Artefact|Discovery]]

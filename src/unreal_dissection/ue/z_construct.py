@@ -7,6 +7,7 @@ from typing import Any
 
 from ..dissassembly import CodeGrabber, get_fn_stack_size
 from ..lieftools import SECTION_RDATA, SECTION_TEXT, Image
+from ..parsing import ParsingContext
 from ..struct import struct_from_stream
 from .native_structs import FClassParams, FEnumParams, FFunctionParams, FPackageParams, FStructParams
 from .z_construct_search import ZConstruct, find_z_constructs
@@ -33,7 +34,7 @@ cache_by_fn_addr: dict[int, ZConstructFnType] = {}
 cache_by_struct_addr: dict[int, ZConstructFnType] = {}
 cache_by_called_fn_addr: dict[int, ZConstructFnType] = {}
 
-def discover_z_constructs(image: Image):
+def discover_z_constructs(image: Image, ctx: ParsingContext):
     # Find all Z_Construct functions by pattern matching
     z_constructs = list(find_z_constructs(image))
     print(f'Found {len(z_constructs)} Z_Construct functions and structs')
@@ -43,7 +44,7 @@ def discover_z_constructs(image: Image):
     assert len(codegen_construct_fns) == 5
 
     # Make some guesses about which ConstructXXX functions are which
-    known_functions: dict[ZConstructFnType, ZConstructInfo] = _categorize_z_construct_calls(image, codegen_construct_fns)
+    known_functions: dict[ZConstructFnType, ZConstructInfo] = _categorize_z_construct_calls(image, ctx, codegen_construct_fns)
     assert len(known_functions) == 5
 
     print(f'Found and identified {len(known_functions)} UECodeGen_Private::Construct functions')
@@ -100,13 +101,13 @@ def _group_construct_fns(image: Image, z_constructs: list[ZConstruct]) -> list[Z
 
 
 
-def _categorize_z_construct_calls(image: Image, z_constructs: list[ZConstructInfo]):
+def _categorize_z_construct_calls(image: Image, ctx: ParsingContext, z_constructs: list[ZConstructInfo]):
     # Analyse structs from each Z_Construct call target to work out which ConstructXXX function it is
     known_functions: dict[ZConstructFnType, ZConstructInfo] = {}
     for info in z_constructs:
         for caller in info.callers:
             # See if we can uniquely guess the struct type
-            struct_types = list(_guess_possible_struct_types(image, caller.struct_addr))
+            struct_types = list(_guess_possible_struct_types(image, ctx, caller.struct_addr))
             if len(struct_types) == 1:
                 # We can, so record this as a known function
                 struct_type = struct_types[0]
@@ -120,13 +121,13 @@ def _categorize_z_construct_calls(image: Image, z_constructs: list[ZConstructInf
     return known_functions
 
 
-def _guess_possible_struct_types(image: Image, addr: int):
+def _guess_possible_struct_types(image: Image, ctx: ParsingContext, addr: int):
     original_stream = image.get_stream(addr)
 
     for struct_type, validator in VALIDATION_FNS.items():
         stream = original_stream.clone()
         try:
-            struct = struct_from_stream(struct_type, stream)
+            struct = struct_from_stream(struct_type, stream, ctx)
         except Exception:
             struct = None
 

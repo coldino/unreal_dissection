@@ -14,10 +14,15 @@ S32_STRUCT = struct.Struct('<i')
 U64_STRUCT = struct.Struct('<Q')
 S64_STRUCT = struct.Struct('<q')
 
+class AlignmentError(Exception):
+    def __init__(self):
+        super().__init__('Unaligned read')
 
 class MemoryStream:
 
-    def __init__(self, memory: memoryview, base: int, offset: int | None = None, rva: int | None = None):
+    def __init__(self, memory: memoryview, base: int, offset: int | None = None, rva: int | None = None,  # noqa: PLR0913
+                *,
+                verify_alignment: bool = False):
         '''Creates a new memory stream for easy deserialization.
 
         Only one of offset or RVA can be specified. If neither are specified, the stream will start at offset 0.
@@ -33,6 +38,7 @@ class MemoryStream:
 
         self._memory = memory
         self._base = base
+        self._verify_alignment = verify_alignment
 
         if offset is not None:
             self.set_offset(offset)
@@ -45,13 +51,13 @@ class MemoryStream:
         return f'MemoryStream(base=0x{self._base:x}, offset={self._pos}, rva=0x{self.addr:x})'
 
     def clone(self) -> MemoryStream:
-        return MemoryStream(self._memory, self._base, offset=self._pos)
+        return MemoryStream(self._memory, self._base, offset=self._pos, verify_alignment=self._verify_alignment)
 
     def clone_offset(self, offset: int) -> MemoryStream:
-        return MemoryStream(self._memory, self._base, offset=self._pos + offset)
+        return MemoryStream(self._memory, self._base, offset=self._pos + offset, verify_alignment=self._verify_alignment)
 
     def clone_at(self, rva: int) -> MemoryStream:
-        return MemoryStream(self._memory, self._base, rva=rva)
+        return MemoryStream(self._memory, self._base, rva=rva, verify_alignment=self._verify_alignment)
 
     @property
     def offset(self) -> int:
@@ -73,6 +79,12 @@ class MemoryStream:
             raise ValueError('Position is outside of stream')
         self._pos = addr - self._base
 
+    def skip(self, length: int):
+        self._pos += length
+
+    def align(self, align: int):
+        self._pos = (self._pos + align - 1) & ~(align - 1)
+
     def bytes(self, length: int, *, peek:bool=False) -> memoryview:
         data = self._memory[self._pos:self._pos + length]
         if not peek:
@@ -86,18 +98,24 @@ class MemoryStream:
         return val
 
     def u16(self, *, peek:bool=False) -> int:
+        if self._verify_alignment and self._pos % 2 != 0:
+            raise AlignmentError
         val = U16_STRUCT.unpack_from(self._memory, self._pos)[0]
         if not peek:
             self._pos += U16_STRUCT.size
         return val
 
     def u32(self, *, peek:bool=False) -> int:
+        if self._verify_alignment and self._pos % 4 != 0:
+            raise AlignmentError
         val = U32_STRUCT.unpack_from(self._memory, self._pos)[0]
         if not peek:
             self._pos += U32_STRUCT.size
         return val
 
     def u64(self, *, peek:bool=False) -> int:
+        if self._verify_alignment and self._pos % 8 != 0:
+            raise AlignmentError
         val = U64_STRUCT.unpack_from(self._memory, self._pos)[0]
         if not peek:
             self._pos += U64_STRUCT.size
@@ -110,18 +128,24 @@ class MemoryStream:
         return val
 
     def s16(self, *, peek:bool=False) -> int:
+        if self._verify_alignment and self._pos % 2 != 0:
+            raise AlignmentError
         val = S16_STRUCT.unpack_from(self._memory, self._pos)[0]
         if not peek:
             self._pos += S16_STRUCT.size
         return val
 
     def s32(self, *, peek:bool=False) -> int:
+        if self._verify_alignment and self._pos % 4 != 0:
+            raise AlignmentError
         val = S32_STRUCT.unpack_from(self._memory, self._pos)[0]
         if not peek:
             self._pos += S32_STRUCT.size
         return val
 
     def s64(self, *, peek:bool=False) -> int:
+        if self._verify_alignment and self._pos % 8 != 0:
+            raise AlignmentError
         val = S64_STRUCT.unpack_from(self._memory, self._pos)[0]
         if not peek:
             self._pos += S64_STRUCT.size
@@ -238,3 +262,43 @@ class MemoryStream:
                     return None
 
         return text
+
+class AutoAlignedMemoryStream(MemoryStream):
+    @staticmethod
+    def from_stream(stream: MemoryStream) -> AutoAlignedMemoryStream:
+        return AutoAlignedMemoryStream(
+            stream._memory,   # noqa: SLF001
+            stream._base,   # noqa: SLF001
+            offset=stream._pos,  # noqa: SLF001
+            verify_alignment=False)
+
+    def u16(self, *, peek:bool=False) -> int:
+        if (self.addr % 2) != 0:
+            self.align(2)
+        return super().u16(peek=peek)
+
+    def u32(self, *, peek:bool=False) -> int:
+        if (self.addr % 4) != 0:
+            self.align(4)
+        return super().u32(peek=peek)
+
+    def u64(self, *, peek:bool=False) -> int:
+        if (self.addr % 8) != 0:
+            self.align(8)
+        return super().u64(peek=peek)
+
+    def s16(self, *, peek:bool=False) -> int:
+        if (self.addr % 2) != 0:
+            self.align(2)
+        return super().s16(peek=peek)
+
+    def s32(self, *, peek:bool=False) -> int:
+        if (self.addr % 4) != 0:
+            self.align(4)
+        return super().s32(peek=peek)
+
+    def s64(self, *, peek:bool=False) -> int:
+        if (self.addr % 8) != 0:
+            self.align(8)
+        return super().s64(peek=peek)
+

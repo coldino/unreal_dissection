@@ -2,7 +2,8 @@ from typing import Annotated
 
 from dataclasses_struct import field
 
-from ..stream import MemoryStream
+from ..parsing import ParsingContext
+from ..stream import AutoAlignedMemoryStream, MemoryStream
 from ..struct import DynamicStruct, dcs, structclass
 from .native_enums import (
     EArrayPropertyFlags,
@@ -100,31 +101,52 @@ class FClassFunctionLinkInfo:
 
 
 class PropertyParams(DynamicStruct):
-    def deserialize(self, stream: MemoryStream) -> None:
+    def deserialize(self, stream: MemoryStream, ctx: ParsingContext) -> None:
+        # Because different versions have different alignments, we use a stream that aligns each read automatically
+        stream = AutoAlignedMemoryStream.from_stream(stream)
+
         self.NameUTF8_ptr = stream.u64()
         self.RepNotifyFuncUTF8_ptr = stream.u64()
         self.PropertyFlags = EPropertyFlags(stream.u64())
         self.Flags = PropertyTypeFull(stream.u32())
         self.ObjectFlags = EObjectFlags(stream.u32())
-        self.ArrayDim = stream.s32()
 
-        # For some reason a couple of types don't have an offset
+        # Different versions use different orders and sizes for these fields
+        if ctx.ue_version_tuple < (5, 3):
+            self.ArrayDim = stream.s32()
+
+        if ctx.ue_version_tuple >= (5, 1):
+            self.SetterFunc_ptr = stream.u64()
+            self.GetterFunc_ptr = stream.u64()
+
+        if ctx.ue_version_tuple >= (5, 3):
+            self.ArrayDim = stream.u16()
+
+        # Bools don't have an Offset
         if self.Flags.value != EPropertyGenFlags.Bool:
-            self.Offset = stream.u32()
+            self.Offset = stream.u32() if ctx.ue_version_tuple < (5, 3) else stream.u16()
 
         # Handle extra values on known types
         match self.Flags.value:
             case EPropertyGenFlags.Array:
-                self.ArrayFlags = EArrayPropertyFlags(stream.u32())
+                self.ArrayFlags = EArrayPropertyFlags(stream.u32() if ctx.ue_version_tuple < (5, 3) else stream.u8())
             case EPropertyGenFlags.Bool:
-                self.ElementSize = stream.u32()
-                self.SizeOfOuter = stream.u64()
+                if ctx.ue_version_tuple < (5, 3):
+                    self.ElementSize = stream.u32()
+                    self.SizeOfOuter = stream.u64()
+                else:
+                    self.ElementSize = stream.u16()
+                    self.SizeOfOuter = stream.u16()
                 self.SetBitFunc_ptr = stream.u64()
             case EPropertyGenFlags.Byte | EPropertyGenFlags.Enum:
                 self.EnumFunc_ptr = stream.u64()
             case EPropertyGenFlags.Class:
-                self.MetaClassFunc_ptr = stream.u64()
-                self.ClassFunc_ptr = stream.u64()
+                if ctx.ue_version_tuple < (5, 1):
+                    self.MetaClassFunc_ptr = stream.u64()
+                    self.ClassFunc_ptr = stream.u64()
+                else:
+                    self.ClassFunc_ptr = stream.u64()
+                    self.MetaClassFunc_ptr = stream.u64()
             case EPropertyGenFlags.Delegate:
                 self.SignatureFunctionFunc_ptr = stream.u64()
             case EPropertyGenFlags.FieldPath:
@@ -132,7 +154,7 @@ class PropertyParams(DynamicStruct):
             case EPropertyGenFlags.Interface:
                 self.InterfaceClassFunc_ptr = stream.u64()
             case EPropertyGenFlags.Map:
-                self.MapFlags = EMapPropertyFlags(stream.u32())
+                self.MapFlags = EMapPropertyFlags(stream.u32() if ctx.ue_version_tuple < (5, 3) else stream.u8())
             case EPropertyGenFlags.InlineMulticastDelegate | EPropertyGenFlags.SparseMulticastDelegate:
                 self.SignatureFunctionFunc_ptr = stream.u64()
             case EPropertyGenFlags.Object | EPropertyGenFlags.WeakObject | EPropertyGenFlags.LazyObject | EPropertyGenFlags.SoftObject:  # noqa: E501
@@ -144,3 +166,15 @@ class PropertyParams(DynamicStruct):
             case _:
                 pass # TODO: Check which other cases need to be handled
 
+
+__all__ = (
+    'FPackageParams',
+    'FClassParams',
+    'FStructParams',
+    'FEnumParams',
+    'FFunctionParams',
+    'FEnumeratorParams',
+    'FImplementedInterfaceParams',
+    'FClassFunctionLinkInfo',
+    'PropertyParams',
+)

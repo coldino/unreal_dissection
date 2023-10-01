@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 
 from ..lieftools import Image
+from ..parsing import ParsingContext
 from .functions import ZConstructFnType
 from .z_construct import ZConstructInfo, discover_z_constructs
 from .z_construct_search import ZConstruct
@@ -14,7 +15,7 @@ class AnalysisResult:
     known_functions: dict[ZConstructFnType, ZConstructInfo]
 
 
-def analyse_image(image: Image):
+def analyse_image(image: Image, ctx: ParsingContext):
     # # Grab useful sections - NOT CURRENTLY NEEDED
     # text_base, text_memory = image.get_section_memory(SECTION_TEXT)
 
@@ -27,7 +28,7 @@ def analyse_image(image: Image):
     # print(f'Found {len(all_calls)} potential functions from {sum(len(v) for v in all_calls.values())} sites')
 
     # Discover and categorize Z_Construct functions
-    z_constructs, known_functions = discover_z_constructs(image)
+    z_constructs, known_functions = discover_z_constructs(image, ctx)
 
     # Return the results
     return AnalysisResult(z_constructs, known_functions) # all_calls,
