@@ -129,8 +129,7 @@ def parse_cached_call(code: CodeGrabber) -> CachedCallResult:
         assert inst.code == Code.RETNQ
     else:
         # We have to assume there's some other processing here that we don't care about
-        log.warning('Unexpected instruction after cached call: {inst.code} @ 0x{inst.ip:x}',
-                    extra=dict(inst=inst))
+        log.warning('Unexpected instruction after cached call: %(code)r @ 0x%(ip)x', dict(code=inst.code, ip=inst.ip))
 
     return CachedCallResult(
         cache_addr=cache_var,

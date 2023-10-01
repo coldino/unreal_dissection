@@ -7,8 +7,7 @@ from typing import TYPE_CHECKING
 from ...discovery.function import FunctionDiscovery
 from ...discovery.string import Utf8Discovery
 from ...discovery.system import register_explorer
-from ..discovery.function import ZConstructFunctionDiscovery
-from ..functions import ZConstructFnType, parse_StaticClass
+from ..functions import parse_ZConstructOrStaticClass
 from ..native_enums import EPropertyGenFlags
 from ..native_structs import PropertyParams
 
@@ -27,30 +26,27 @@ def explore_PropertyParams(subject: PropertyParams, _image: Image) -> Iterator[D
         # Handle extra values on known types
         match subject.Flags.value:
             case EPropertyGenFlags.Byte | EPropertyGenFlags.Enum:
-                yield ZConstructFunctionDiscovery(subject.EnumFunc_ptr, ZConstructFnType.Enum)
+                yield FunctionDiscovery(subject.EnumFunc_ptr, parse_ZConstructOrStaticClass)
             case EPropertyGenFlags.Bool:
-                if subject.SetBitFunc_ptr:
-                    pass
-                # yield ZConstructFunctionDiscovery(subject.SetBitFunc_ptr, ZConstructFnType.Function) ???
+                # SetBitFunc_ptr is unparsable
+                pass
             case EPropertyGenFlags.Class:
-                yield ZConstructFunctionDiscovery(subject.MetaClassFunc_ptr, ZConstructFnType.Class)
-                yield ZConstructFunctionDiscovery(subject.ClassFunc_ptr, ZConstructFnType.Class)
+                yield FunctionDiscovery(subject.MetaClassFunc_ptr, parse_ZConstructOrStaticClass)
+                yield FunctionDiscovery(subject.ClassFunc_ptr, parse_ZConstructOrStaticClass)
             case EPropertyGenFlags.Delegate:
-                yield ZConstructFunctionDiscovery(subject.SignatureFunctionFunc_ptr, ZConstructFnType.Function)
+                yield FunctionDiscovery(subject.SignatureFunctionFunc_ptr, parse_ZConstructOrStaticClass)
             case EPropertyGenFlags.FieldPath:
                 if subject.PropertyClassFunc_ptr:
                     pass # TODO: PropertyClassFunc_ptr
             case EPropertyGenFlags.Interface:
-                yield FunctionDiscovery(subject.InterfaceClassFunc_ptr, parse_StaticClass)
+                yield FunctionDiscovery(subject.InterfaceClassFunc_ptr, parse_ZConstructOrStaticClass)
             case EPropertyGenFlags.InlineMulticastDelegate | EPropertyGenFlags.SparseMulticastDelegate:
-                yield ZConstructFunctionDiscovery(subject.SignatureFunctionFunc_ptr, ZConstructFnType.Function)
+                yield FunctionDiscovery(subject.SignatureFunctionFunc_ptr, parse_ZConstructOrStaticClass)
             case EPropertyGenFlags.SoftClass:
-                yield ZConstructFunctionDiscovery(subject.MetaClassFunc_ptr, ZConstructFnType.Class)
+                yield FunctionDiscovery(subject.MetaClassFunc_ptr, parse_ZConstructOrStaticClass)
             case EPropertyGenFlags.Object | EPropertyGenFlags.WeakObject | EPropertyGenFlags.LazyObject | EPropertyGenFlags.SoftObject:  # noqa: E501
-                # Don't know what subject.ClassFunc_ptr is
-                pass
+                yield FunctionDiscovery(subject.ClassFunc_ptr, parse_ZConstructOrStaticClass)
             case EPropertyGenFlags.Struct:
-                # Don't know what ScriptStructFunc_ptr is
-                pass
+                yield FunctionDiscovery(subject.ScriptStructFunc_ptr, parse_ZConstructOrStaticClass)
             case _:
                 pass # TODO: Check which other cases need to be handled

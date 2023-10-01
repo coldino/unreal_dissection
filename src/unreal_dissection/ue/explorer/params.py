@@ -10,8 +10,7 @@ from ...discovery.string import Utf8Discovery
 from ...discovery.struct import StructDiscovery
 from ...discovery.system import register_explorer
 from ...struct import get_struct_size_aligned
-from ..discovery.function import ZConstructFunctionDiscovery
-from ..functions import parse_StaticClass
+from ..functions import parse_ZConstructOrStaticClass
 from ..native_structs import (
     FClassFunctionLinkInfo,
     FClassParams,
@@ -23,7 +22,6 @@ from ..native_structs import (
     FStructParams,
     PropertyParams,
 )
-from ..z_construct import ZConstructFnType
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -40,17 +38,17 @@ def explore_FPackageParams(subject: FPackageParams, image: Image) -> Iterator[Di
 
     if subject.SingletonFuncArrayFn:
         for ptr in image.get_stream(subject.SingletonFuncArrayFn).ptr_array(subject.NumSingletons):
-            yield ZConstructFunctionDiscovery(ptr, ZConstructFnType.Function)
+            yield FunctionDiscovery(ptr, parse_ZConstructOrStaticClass)
 
 
 @register_explorer(FClassParams)
 def explore_FClassParams(subject: FClassParams, image: Image) -> Iterator[Discovery]:
-    yield FunctionDiscovery(subject.ClassNoRegisterFunc, parse_StaticClass)
+    yield FunctionDiscovery(subject.ClassNoRegisterFunc, parse_ZConstructOrStaticClass)
     yield Utf8Discovery(subject.ClassConfigNameUTF8)
 
     if subject.DependencySingletonFuncArray:
         for ptr in image.get_stream(subject.DependencySingletonFuncArray).ptr_array(subject.NumDependencySingletons):
-            yield ZConstructFunctionDiscovery(ptr, None)
+            yield FunctionDiscovery(ptr, parse_ZConstructOrStaticClass)
 
     if subject.FunctionLinkArray:
         struct_size = get_struct_size_aligned(FClassFunctionLinkInfo)
@@ -69,8 +67,8 @@ def explore_FClassParams(subject: FClassParams, image: Image) -> Iterator[Discov
 
 @register_explorer(FStructParams)
 def explore_FStructParams(subject: FStructParams, image: Image) -> Iterator[Discovery]:
-    yield ZConstructFunctionDiscovery(subject.OuterFunc, None)
-    yield ZConstructFunctionDiscovery(subject.SuperFunc, None)
+    yield FunctionDiscovery(subject.OuterFunc, parse_ZConstructOrStaticClass)
+    yield FunctionDiscovery(subject.SuperFunc, parse_ZConstructOrStaticClass)
     yield Utf8Discovery(subject.NameUTF8)
 
     if subject.PropertyArray:
@@ -80,7 +78,7 @@ def explore_FStructParams(subject: FStructParams, image: Image) -> Iterator[Disc
 
 @register_explorer(FEnumParams)
 def explore_FEnumParams(subject: FEnumParams, _image: Image) -> Iterator[Discovery]:
-    yield ZConstructFunctionDiscovery(subject.OuterFunc, None)
+    yield FunctionDiscovery(subject.OuterFunc, parse_ZConstructOrStaticClass)
     yield Utf8Discovery(subject.NameUTF8)
     yield Utf8Discovery(subject.CppTypeUTF8)
 
@@ -92,8 +90,8 @@ def explore_FEnumParams(subject: FEnumParams, _image: Image) -> Iterator[Discove
 
 @register_explorer(FFunctionParams)
 def explore_FFunctionParams(subject: FFunctionParams, image: Image) -> Iterator[Discovery]:
-    yield ZConstructFunctionDiscovery(subject.OuterFunc, None)
-    yield ZConstructFunctionDiscovery(subject.SuperFunc, None)
+    yield FunctionDiscovery(subject.OuterFunc, parse_ZConstructOrStaticClass)
+    yield FunctionDiscovery(subject.SuperFunc, parse_ZConstructOrStaticClass)
     yield Utf8Discovery(subject.NameUTF8)
     yield Utf8Discovery(subject.OwningClassName)
     yield Utf8Discovery(subject.DelegateName)
@@ -110,10 +108,11 @@ def explore_FEnumeratorParams(subject: FEnumeratorParams, _image: Image) -> Iter
 
 @register_explorer(FImplementedInterfaceParams)
 def explore_FImplementedInterfaceParams(subject: FImplementedInterfaceParams, _image: Image) -> Iterator[Discovery]:
-    yield ZConstructFunctionDiscovery(subject.ClassFunc, None)
+    yield FunctionDiscovery(subject.ClassFunc, parse_ZConstructOrStaticClass)
+    yield from ()
 
 
 @register_explorer(FClassFunctionLinkInfo)
 def explore_FClassFunctionLinkInfo(subject: FClassFunctionLinkInfo, _image: Image) -> Iterator[Discovery]:
-    yield ZConstructFunctionDiscovery(subject.CreateFuncPtr, ZConstructFnType.Function)
+    yield FunctionDiscovery(subject.CreateFuncPtr, parse_ZConstructOrStaticClass)
     yield Utf8Discovery(subject.FuncNameUTF8)

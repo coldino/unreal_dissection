@@ -9,7 +9,12 @@ from ...discovery.function import FunctionDiscovery
 from ...discovery.string import Utf16Discovery
 from ...discovery.struct import StructDiscovery
 from ...discovery.system import register_explorer
-from ..functions import StaticClassFnArtefact, ZConstructFnArtefact, ZConstructFnType, parse_StaticClass
+from ..functions import (
+    StaticClassFnArtefact,
+    ZConstructFnArtefact,
+    ZConstructFnType,
+    parse_ZConstructOrStaticClass,
+)
 from ..native_structs import FClassParams, FEnumParams, FFunctionParams, FPackageParams, FStructParams
 
 if TYPE_CHECKING:
@@ -32,10 +37,10 @@ def explore_StaticClassFnArtefact(subject: StaticClassFnArtefact, _image: Image)
     log.debug('Exploring StaticClassFnArtefact %r', subject)
     yield Utf16Discovery(subject.package_name_ptr)
     yield Utf16Discovery(subject.name_ptr)
-    # yield FunctionDiscovery(subject.register_fn_ptr, parse_ZConstruct) # TODO: Check one of these
+    yield FunctionDiscovery(subject.register_fn_ptr, parse_ZConstructOrStaticClass)
     yield Utf16Discovery(subject.config_name_ptr)
-    yield FunctionDiscovery(subject.super_class_fn_ptr, parse_StaticClass)
-    yield FunctionDiscovery(subject.within_class_fn_ptr, parse_StaticClass)
+    yield FunctionDiscovery(subject.super_class_fn_ptr, parse_ZConstructOrStaticClass)
+    yield FunctionDiscovery(subject.within_class_fn_ptr, parse_ZConstructOrStaticClass)
 
 ENUM_TO_STRUCT = {
     ZConstructFnType.Package: FPackageParams,

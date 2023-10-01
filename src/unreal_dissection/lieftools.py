@@ -40,7 +40,7 @@ class Image:
             The memory stream.
         '''
         base, memory = self.get_section_memory_from_rva(rva)
-        return MemoryStream(memory, base, rva=rva)
+        return MemoryStream(memory, base, rva=rva, verify_alignment=True)
 
     def get_section_name_from_rva(self, rva: int) -> str|None:
         '''Gets the section from an RVA.
@@ -138,3 +138,44 @@ class Image:
             if value == target:
                 yield i * 8 + base
 
+
+    def _extract_version(self) -> None:
+        self.version_tuple: tuple[int, ...]|None = None
+        self.version_string: str|None = None
+
+        binary = self.binary
+        if not isinstance(binary, lief.PE.Binary) or not binary.has_resources:
+            return
+        resource_manager = binary.resources_manager
+        if not resource_manager or not resource_manager.has_version:
+            return
+        version_entry: lief.PE.ResourceVersion = resource_manager.version # type: ignore
+        if not version_entry:
+            return
+
+        # Extract fixed version info from the resource section
+        self._extract_fixed_version_info(version_entry.fixed_file_info)
+
+        # Extract remaining property data
+        self._extract_string_version_info(version_entry.string_file_info)
+
+    def _extract_fixed_version_info(self, fixed_file_info: lief.PE.ResourceFixedFileInfo):
+        # Version info is four 16-bit integers split across two 32-bit integers
+        version_ms = fixed_file_info.product_version_MS
+        version_ls = fixed_file_info.product_version_LS
+        version = (
+            version_ms >> 16, version_ms & 0xFFFF,
+            version_ls >> 16, version_ls & 0xFFFF,
+        )
+
+        # Remove trailing zeros
+        while version and version[-1] == 0:
+            version = version[:-1]
+
+        self.version_tuple = version
+        self.version_string = '.'.join(str(v) for v in version) if version else None
+
+    def _extract_string_version_info(self, string_file_info: lief.PE.ResourceStringFileInfo):
+        first_lang = string_file_info.langcode_items[0]
+        items: dict[str, bytes] = first_lang.items # type: ignore
+        self.file_properties = {key: value.decode('utf-8') for key, value in items.items()}
