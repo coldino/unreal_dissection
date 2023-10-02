@@ -1,7 +1,7 @@
 from logging import getLogger
 
 from .discovery.system import DiscoverySystem
-from .explorers import done  # type: ignore  # noqa: F401
+from .explorers import done  # type: ignore  # noqa: F401 - required to register explorers
 from .lieftools import Image
 from .ue.analyse import analyse_image
 from .ue.discovery.function import ZConstructFunctionDiscovery
@@ -25,8 +25,5 @@ def fully_discover(image: Image) -> DiscoverySystem:
 
     # Process discoveries until we have none left
     discovery.process_all()
-
-    # Show what was found
-    discovery.print_summary()
 
     return discovery

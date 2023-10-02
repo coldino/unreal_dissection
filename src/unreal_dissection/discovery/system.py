@@ -1,5 +1,5 @@
 from collections import defaultdict
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from functools import singledispatch
 from logging import getLogger
 from typing import Any
@@ -7,7 +7,7 @@ from typing import Any
 from ..lieftools import Image
 from ..parsing import ParsingContext
 from .core import Artefact, Discoverable, Discovery, DiscoveryComparison
-from .function import FunctionArtefact, FunctionParserFn, TrampolineArtefact
+from .function import FunctionArtefact, FunctionParserFn, TrampolineArtefact, UnparsableFunctionArtefact
 from .string import StringArtefact
 from .struct import StructArtefact
 
@@ -199,7 +199,9 @@ class DiscoverySystem:
         for struct_type,structs in self.found_structs_by_type.items():
             print(f'  {len(structs)} {struct_type.__name__} structs')
         for fn_type,fns in self.found_functions_by_type.items():
-            print(f'  {len(fns)} {fn_type.__name__.removeprefix("parse_").removesuffix("_fn")} functions')
+            if count := _count_parseable(fns):
+                print(f'  {count} {_clean_fn_name(fn_type.__name__)} functions')
+        print(f'  {_count_unparsable(self.found.values())} unparsable functions')
 
 
     def _discover(self, discoverable: Any):
@@ -257,6 +259,14 @@ def register_explorer[T](for_type: type[T]) -> Callable[
 def get_explorer_for_type(for_type: type) -> AnyExplorerFn | None:
     return _registered_explorers.get(for_type.__name__, None)
 
+def _count_unparsable(artefacts: Iterable[Artefact]) -> int:
+    return sum(1 for artefact in artefacts if isinstance(artefact, UnparsableFunctionArtefact))
+
+def _count_parseable(artefacts: Iterable[Artefact]) -> int:
+    return sum(1 for artefact in artefacts if not isinstance(artefact, UnparsableFunctionArtefact))
+
+def _clean_fn_name(fn_name: str) -> str:
+    return fn_name.removeprefix('parse_').removesuffix('_fn')
 
 __all__ = [
     'DiscoverySystem',

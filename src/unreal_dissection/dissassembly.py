@@ -77,6 +77,9 @@ class CachedCallResult:
     parameters: list[int]
 
 
+class ParseFailureError(Exception):
+    pass
+
 def parse_cached_call(code: CodeGrabber) -> CachedCallResult:
     stack_size, stack_save_reg = parse_fn_prelude(code)
 
@@ -107,7 +110,7 @@ def parse_cached_call(code: CodeGrabber) -> CachedCallResult:
         assert inst.code in (Code.JNE_REL8_64, Code.JNE_REL32_64)
         ret_label = inst.memory_displacement
     else:
-        raise AssertionError(f'Unexpected instruction when parsing cached call: {inst.code} @ 0x{inst.ip:x}')
+        raise ParseFailureError(f'Unexpected instruction when parsing cached call: {inst.code} @ 0x{inst.ip:x}')
 
     # Parse the setup and call of the function
     fn_addr, parameters = gather_call_params(code, stack_size, stack_save_reg)
@@ -128,8 +131,8 @@ def parse_cached_call(code: CodeGrabber) -> CachedCallResult:
         inst = code.next_inst()
         assert inst.code == Code.RETNQ
     else:
-        # We have to assume there's some other processing here that we don't care about
-        log.warning('Unexpected instruction after cached call: %(code)r @ 0x%(ip)x', dict(code=inst.code, ip=inst.ip))
+        # We have to assume this is not a simple cached call as there's other processing here
+        raise ParseFailureError(f'Unexpected instruction when parsing cached call: {inst.code} @ 0x{inst.ip:x}')
 
     return CachedCallResult(
         cache_addr=cache_var,

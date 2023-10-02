@@ -101,7 +101,8 @@ def export_FClassParams(struct: FClassParams, ctx: ExportContext) -> dict[str, A
     props = export_ptr_array(struct.NumProperties, struct.PropertyArray, ctx, StructArtefact) # type: ignore
     props: list[PropertyParams] = [prop.struct for prop in props] # type: ignore
 
-    interfaces = export_ptr_array(struct.NumImplementedInterfaces, struct.ImplementedInterfaceArray, ctx, StaticClassFnArtefact)
+    # Interfaces disabled currently due to a bug in the parser
+    # interfaces = export_ptr_array(struct.NumImplementedInterfaces, struct.ImplementedInterfaceArray, ctx, StaticClassFnArtefact)
 
     functions = export_array(struct.NumFunctions, struct.FunctionLinkArray, ctx, FClassFunctionLinkInfo)
 
@@ -112,7 +113,7 @@ def export_FClassParams(struct: FClassParams, ctx: ExportContext) -> dict[str, A
 
         'dependencies': tuple(get_blueprint_path(dependency, ctx) for dependency in deps),
         'properties': tuple(_parse_property_list(props, ctx)),
-        'interfaces': tuple(get_blueprint_path(interface_ptr, ctx) for interface_ptr in interfaces),
+        # 'interfaces': tuple(get_blueprint_path(interface_ptr, ctx) for interface_ptr in interfaces),
         'functions': tuple(export_FClassFunctionLinkInfo(fn, ctx) for fn in functions),
     }
 

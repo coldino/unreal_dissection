@@ -59,5 +59,5 @@ Requirements
 ## Installation
 
 ```txt
-pip install git+https://github.com/coldino/unreal-dissection.git#egg=unreal_dissection
+pip install git+https://github.com/coldino/unreal_dissection.git#egg=unreal_dissection
 ```

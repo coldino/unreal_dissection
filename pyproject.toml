@@ -3,7 +3,7 @@ name = "unreal-dissection"
 version = "0.0.0"
 description = "Extracts detailed metadata from Unreal Engine games using static analysis."
 authors = ["coldino <28345893+coldino@users.noreply.github.com>"]
-repository = "https://github.com/coldino/unreal-dissection"
+repository = "https://github.com/coldino/unreal_dissection"
 readme = "README.md"
 packages = [{include = "unreal_dissection", from = "src"}]
 
@@ -13,7 +13,7 @@ dataclasses-struct = "^0.8.0"
 iced-x86 = "^1.20.0"
 lief = {version = "^0.14.0.dev0", source = "lief-dev"}
 typed-argparse = "^0.3.0"
-
+tqdm = "^4.66.1"
 
 [[tool.poetry.source]]
 name = "lief-dev"
@@ -40,7 +40,7 @@ target-version = "py312"
 src = ["src"]
 select = ['E', 'F', 'UP', 'I', 'N', 'YTT', 'ASYNC', 'S', 'FBT', 'B', 'A', 'COM', 'C4', 'T10', 'FA', 'ISC', 'G', 'INP', 'PYI', 'PT', 'Q', 'RSE', 'RET', 'SLF', 'SLOT', 'SIM', 'TCH', 'ARG', 'PTH', 'FIX', 'ERA', 'PL', 'FLY', 'PERF', 'FURB', 'RUF']
 ignore = ['S101', 'A003', 'C408', 'RET504', 'PLR2004', 'TRY003']
-unfixable = ['ERA']
+unfixable = ['ERA','F841']
 line-length = 127
 
 [tool.ruff.flake8-quotes]

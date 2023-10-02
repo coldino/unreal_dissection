@@ -7,7 +7,14 @@ from logging import getLogger
 from typing import TYPE_CHECKING, Any
 
 from ..discovery.function import FunctionArtefact, TrampolineArtefact, UnparsableFunctionArtefact
-from ..dissassembly import CachedCallResult, CodeGrabber, UnexpectedInstructionError, parse_cached_call, parse_trampolines
+from ..dissassembly import (
+    CachedCallResult,
+    CodeGrabber,
+    ParseFailureError,
+    UnexpectedInstructionError,
+    parse_cached_call,
+    parse_trampolines,
+)
 from .z_construct import ZConstructFnType, lookup_construct_fn_type, lookup_struct_type_by_fn_addr
 
 if TYPE_CHECKING:
@@ -72,10 +79,7 @@ def parse_ZConstruct(code: CodeGrabber, _ctx: ParsingContext, info: ZConstructFn
     start_addr = code.addr
     try:
         parsed = parse_cached_call(code)
-    except AssertionError:
-        # This is not a typical Z_Construct function, so we can't parse it
-        parsed = None
-    except UnexpectedInstructionError:
+    except (AssertionError, UnexpectedInstructionError, ParseFailureError):
         # This is not a typical Z_Construct function, so we can't parse it
         parsed = None
     end_addr = code.addr
@@ -126,7 +130,7 @@ def parse_ZConstructOrStaticClass(code: CodeGrabber, _ctx: ParsingContext, _info
     start_addr = code.addr
     try:
         parsed = parse_cached_call(code)
-    except (AssertionError, UnexpectedInstructionError):
+    except (AssertionError, UnexpectedInstructionError, ParseFailureError):
         # This is not a typical function, so we can't parse it
         parsed = None
     end_addr = code.addr

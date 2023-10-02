@@ -29,19 +29,21 @@ def export_array[T](count: int, ptr: int, ctx: ExportContext, struct: type[T]) -
         if not isinstance(target, struct):
             raise TypeError(f'Expected {struct.__name__}, got {target.__class__.__name__}') # type: ignore
         return target
-    return tuple(checked_artefact(sub_ptr) for sub_ptr in ptrs)
+    return tuple(artefact for artefact in (checked_artefact(sub_ptr) for sub_ptr in ptrs) if artefact is not None)
 
 def export_ptr_array[T](count: int, ptr: int, ctx: ExportContext, struct: type[T]) -> tuple[T, ...]:
     if not ptr:
         return ()
     stream = ctx.image.get_stream(ptr)
     ptrs = stream.ptr_array(count)
-    def checked_artefact(sub_ptr: int) -> T:
+    def checked_artefact(sub_ptr: int) -> T | None:
         artefact = ctx.discovery.found[sub_ptr]
+        if isinstance(artefact, UnparsableFunctionArtefact):
+            return None
         if not isinstance(artefact, struct):
             raise TypeError(f'Expected {struct.__name__}, got {artefact.__class__.__name__}')
         return artefact
-    return tuple(checked_artefact(sub_ptr) for sub_ptr in ptrs)
+    return tuple(artefact for artefact in (checked_artefact(sub_ptr) for sub_ptr in ptrs) if artefact is not None)
 
 def get_name(obj: Any, ctx: ExportContext) -> str:
     match obj:
@@ -71,34 +73,39 @@ def get_name(obj: Any, ctx: ExportContext) -> str:
             raise NotImplementedError(f'get_name for {obj.__class__.__name__}')
 
 def get_blueprint_path(obj: Any, ctx: ExportContext) -> str:
+    return get_ref(obj, ctx)[1]
+
+def get_ref(obj: Any, ctx: ExportContext) -> tuple[str, str]:  # noqa: PLR0911
     match obj:
         case ZConstructFnArtefact():
-            return get_blueprint_path(ctx.discovery.found_structs[obj.params_struct_ptr].struct, ctx)
+            return get_ref(ctx.discovery.found_structs[obj.params_struct_ptr].struct, ctx)
 
         case StaticClassFnArtefact():
             cls_name = ctx.discovery.get_string(obj.name_ptr)
             pkg_name = ctx.discovery.get_string(obj.package_name_ptr)
-            return f'{pkg_name}.{cls_name}'
+            return 'class', f'{pkg_name}.{cls_name}'
 
         case StructArtefact():
-            return get_blueprint_path(obj.struct, ctx) # type: ignore
+            return get_ref(obj.struct, ctx) # type: ignore
 
         case FPackageParams():
             pkg_name = ctx.discovery.get_string(obj.NameUTF8)
-            return pkg_name
+            return 'package', pkg_name
 
         case FClassParams():
+            # Class details are only discovered from the associated registration function
             fn = ctx.discovery.found[obj.ClassNoRegisterFunc]
-            return get_blueprint_path(fn, ctx)
+            return get_ref(fn, ctx)
 
         case FStructParams() | FEnumParams() | FFunctionParams():
             name = ctx.discovery.get_string(obj.NameUTF8)
             outer_fn = ctx.discovery.found[obj.OuterFunc]
             outer_name = get_blueprint_path(outer_fn, ctx)
-            return f'{outer_name}.{name}'
+            type_name = obj.__class__.__name__[1:-6].lower()
+            return type_name, f'{outer_name}.{name}'
 
         case UnparsableFunctionArtefact():
-            return '<unparsable>'
+            return '<unknown>', '<unparsable>'
 
         case _:
             raise NotImplementedError(f'get_blueprint_path for {obj.__class__.__name__}')
@@ -107,6 +114,7 @@ __all__ = (
     'ExportContext',
     'export_array',
     'export_ptr_array',
+    'get_ref',
     'get_name',
     'get_blueprint_path',
 )
