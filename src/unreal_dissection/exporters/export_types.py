@@ -95,6 +95,9 @@ def export_FClassParams(struct: FClassParams, ctx: ExportContext) -> dict[str, A
     if not isinstance(reg_fn, StaticClassFnArtefact):
         raise TypeError(f'Expected StaticClassFnArtefact, got {reg_fn.__class__.__name__}')
 
+    super_cls = reg_fn.super_class_fn_ptr
+    within_cls = reg_fn.within_class_fn_ptr
+
     deps = export_ptr_array(struct.NumDependencySingletons, struct.DependencySingletonFuncArray, ctx, ZConstructFnArtefact)
     deps = [ctx.discovery.found[dep.params_struct_ptr] for dep in deps]
 
@@ -110,6 +113,8 @@ def export_FClassParams(struct: FClassParams, ctx: ExportContext) -> dict[str, A
         'name': ctx.discovery.get_string(reg_fn.name_ptr),
         'ini_name': ctx.discovery.get_string(struct.ClassConfigNameUTF8, default=None),
         'class_info': struct.CppClassInfo,
+        'super': get_blueprint_path(ctx.discovery.found[super_cls], ctx) if super_cls else None,
+        'within': get_blueprint_path(ctx.discovery.found[reg_fn.within_class_fn_ptr], ctx) if within_cls else None,
 
         'dependencies': tuple(get_blueprint_path(dependency, ctx) for dependency in deps),
         'properties': tuple(_parse_property_list(props, ctx)),
