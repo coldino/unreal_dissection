@@ -55,3 +55,7 @@ multiline-quotes = 'double'
 
 [tool.pyright]
 pythonVersion = 3.12
+
+[tool.pytest.ini_options]
+testpaths = ["src", "tests"]
+addopts = ["--doctest-modules"]

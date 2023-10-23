@@ -206,7 +206,7 @@ class MemoryStream:
     def utf16zt(self, allow_chars:str|None=DEFAULT_ALLOW_CHARS, limit:int=256) -> str:
         """
         Doctests:
-        >>> MemoryStream(b'\x00', 0).utf16zt()
+        >>> MemoryStream(memoryview(bytes.fromhex('0000')), 0).utf16zt()
         ''
         """
         start = self._pos

@@ -51,14 +51,13 @@ class Pattern:
         Doctests:
         >>> list(Pattern((ByteMatch(mask=255, value=0xad), )).search(memoryview(b'\\xde\\xad\\xbe\\xef')))
         [1]
-        >>> list(Pattern((ByteMatch(mask=255, value=0xad), ByteMatch(mask=255, value=0xbe)))
-                .search(memoryview(b'\\xde\\xad\\xbe\\xef')))
+        >>> list(Pattern((ByteMatch(mask=255, value=0xad), ByteMatch(mask=255, value=0xbe))).search(memoryview(b'\\xde\\xad\\xbe\\xef')))
         [1]
         >>> list(Pattern((ByteMatch(mask=255, value=0xff), )).search(memoryview(b'\\xff\\xde\\xad\\xbe\\xef\\xff')))
         [0, 5]
         >>> list(Pattern((ByteMatch(mask=255, value=0xff), )).search(memoryview(b'\\xde\\xad\\xbe\\xef')))
         []
-        """
+        """  # noqa: E501 - wrapping in doctests is a pain
         for offset in range(len(memory) - len(self.entries) + 1):
             for i, match in enumerate(self.entries):
                 if not match.matches(memory[offset + i]):
