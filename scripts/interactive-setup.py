@@ -1,6 +1,8 @@
 # ruff: noqa: E402,I001,F401,Q000,E501,INP001,F403,F405
 # pyright: basic
 
+import sys
+from pathlib import Path
 from logging import INFO, basicConfig
 
 basicConfig(level=INFO)
@@ -12,7 +14,12 @@ from unreal_dissection.exporters.core import *
 from unreal_dissection.ue.native_structs import *
 from unreal_dissection.exporters.export_types import exporters
 
-image = load_image(r"E:\Data\purlovia\pre-asa-testing\2023_Sep06_Windows_Shipping_NoPAK_Unversioned\Purlovia_UE5\Binaries\Win64\Purlovia_UE5-Win64-Shipping.exe")
+filename = sys.argv[-1]
+if not Path(filename).exists():
+    print(f"File {filename} does not exist")
+    sys.exit(1)
+
+image = load_image(filename)
 display_exe_info(image)
 discovery = fully_discover(image)
 discovery.print_summary()
