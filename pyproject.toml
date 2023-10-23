@@ -43,7 +43,7 @@ build-backend = "poetry.core.masonry.api"
 target-version = "py312"
 src = ["src"]
 select = ['E', 'F', 'UP', 'I', 'N', 'YTT', 'ASYNC', 'S', 'FBT', 'B', 'A', 'COM', 'C4', 'T10', 'FA', 'ISC', 'G', 'INP', 'PYI', 'PT', 'Q', 'RSE', 'RET', 'SLF', 'SLOT', 'SIM', 'TCH', 'ARG', 'PTH', 'FIX', 'ERA', 'PL', 'FLY', 'PERF', 'FURB', 'RUF']
-ignore = ['S101', 'A003', 'C408', 'RET504', 'PLR2004', 'TRY003']
+ignore = ['S101', 'A003', 'C408', 'RET504', 'PLR2004', 'TRY003', 'ERA001']
 unfixable = ['ERA','F841']
 line-length = 127
 

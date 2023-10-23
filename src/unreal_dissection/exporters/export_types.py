@@ -105,7 +105,11 @@ def export_FClassParams(struct: FClassParams, ctx: ExportContext) -> dict[str, A
     props: list[PropertyParams] = [prop.struct for prop in props] # type: ignore
 
     # Interfaces disabled currently due to a bug in the parser
-    # interfaces = export_ptr_array(struct.NumImplementedInterfaces, struct.ImplementedInterfaceArray, ctx, StaticClassFnArtefact)
+    # interfaces = export_ptr_array(
+    #     struct.NumImplementedInterfaces,
+    #     struct.ImplementedInterfaceArray,
+    #     ctx,
+    #     StaticClassFnArtefact)
 
     functions = export_array(struct.NumFunctions, struct.FunctionLinkArray, ctx, FClassFunctionLinkInfo)
 

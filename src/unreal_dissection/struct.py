@@ -52,7 +52,7 @@ def struct_from_stream[T](cls: type[T], stream: MemoryStream, ctx: ParsingContex
     if dcs.is_dataclass_struct(cls):
         size = dcs.get_struct_size(cls)
         data = stream.bytes(size)
-        return cast(T, cls.from_packed(data))
+        return cast(T, cls.from_packed(data)) # type: ignore - Python isn't good with bytes/memoryview typing
 
     if issubclass(cls, DynamicStruct):
         return cls.from_stream(stream, ctx)

@@ -164,7 +164,7 @@ class PropertyParams(DynamicStruct):
             case EPropertyGenFlags.Struct:
                 self.ScriptStructFunc_ptr = stream.u64()
             case _:
-                pass # TODO: Check which other cases need to be handled
+                pass
 
 
 __all__ = (
