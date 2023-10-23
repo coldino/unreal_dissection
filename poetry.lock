@@ -222,14 +222,18 @@ name = "dataclasses-struct"
 version = "0.8.0"
 description = "Converting dataclasses to and from fixed-length binary data using struct"
 optional = false
-python-versions = ">=3.8.1,<4.0.0"
-files = [
-    {file = "dataclasses_struct-0.8.0-py3-none-any.whl", hash = "sha256:3c58fc3f1e70838ce056f3d626cf598e99f64376ac1379bb5ee143ba258dc0ad"},
-    {file = "dataclasses_struct-0.8.0.tar.gz", hash = "sha256:05d00e372ad7af09e40b1bd642263374f1ee8dd11cdbf5585a6f8b8b591f03b8"},
-]
+python-versions = "^3.8.1"
+files = []
+develop = false
 
 [package.dependencies]
-typing-extensions = ">=4.5.0,<5.0.0"
+typing-extensions = "^4.5.0"
+
+[package.source]
+type = "git"
+url = "https://github.com/coldino/dataclasses-struct.git"
+reference = "HEAD"
+resolved_reference = "9a685657cdbf41f02583832c0e8caf54f5d3651d"
 
 [[package]]
 name = "distlib"
@@ -1127,4 +1131,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "f3af4bf7a353032d40c65c15ff390de7bee056a60d34dc07afb094caebbc17ea"
+content-hash = "93566c5df4e2d7d3fbfa6a33d5750c5a0fdbfd2c5cd194431af2490e342f71f9"

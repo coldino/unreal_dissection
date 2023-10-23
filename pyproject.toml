@@ -9,7 +9,7 @@ packages = [{include = "unreal_dissection", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-dataclasses-struct = "^0.8.0"
+dataclasses-struct = {git = "https://github.com/coldino/dataclasses-struct.git"}
 iced-x86 = "^1.20.0"
 lief = {version = "^0.14.0.dev0", source = "lief-dev"}
 typed-argparse = "^0.3.0"
