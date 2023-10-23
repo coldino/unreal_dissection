@@ -92,8 +92,8 @@ def _group_construct_fns(image: Image, z_constructs: list[ZConstruct]) -> list[Z
         try:
             stack_size = get_fn_stack_size(code)
         except AssertionError:
-            log.warning('Failed to get stack size for ZConstruct function @ 0x{call_addr:x} (failed at 0x{code.addr:x}))',
-                        extra=dict(call_addr=call_addr, code=code))
+            log.warning('Failed to get stack size for ZConstruct function @ 0x%(call_addr)x (failed at 0x%(addr)x)',
+                        dict(call_addr=call_addr, addr=code.addr))
             continue
         results.append(ZConstructInfo(call_addr, stack_size, len(callers), callers))
 
