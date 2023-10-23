@@ -73,20 +73,29 @@ Note that a development version of `lief` 0.14 is used from their Nightly reposi
 
 ## Installation
 
-```txt
-pip install git+https://github.com/coldino/unreal_dissection.git#egg=unreal_dissection
+***[DOES NOT WORK]*** This option *would* be the best IF the Lief package would release 0.14!
+```sh
+pip install 'git+https://github.com/coldino/unreal_dissection.git#egg=unreal_dissection[7zip]'
+```
+
+But as it is currently we have to (including optional 7zip archive writing):
+```sh
+git clone https://github.com/coldino/unreal_dissection.git
+poetry install -E 7zip
 ```
 
 ## Collaboration
 
-This project is setup to use Ruff quite heavily so integration with an editor such as VSCode is recommended.
+This project is setup to use Ruff quite heavily so integration with an editor such as VSCode is recommended. It also includes a pre-commit configuration to enforce Ruff's rules and perform a Poetry check.
 
-Get setup:
+Enable the pre-commit:
 ```sh
-poetry install
+pre-commit install
 ```
 
-Experimentation via iPython is very handy:
+Then, experimentation via iPython is very handy:
+
+*(note sometimes IPython will need to be installed inside the virtualenv with `pip install ipython`, otherwise it might not find the correct packages)*
 ```sh
 ipython -i scripts/interactive-setup.py <ue5 exe path>
 ```
