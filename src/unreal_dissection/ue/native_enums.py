@@ -109,6 +109,9 @@ class EPropertyFlags(IntFlag, boundary=STRICT):
     NativeAccessSpecifierProtected = (1 << 53)
     NativeAccessSpecifierPrivate = (1 << 54)
     SkipSerialization = (1 << 55)
+    ARK_ForcedNoLocalization = (1 << 56)
+    ARK_LiveTunable = (1 << 57)
+    ARK_IgnoreWhenSavingData = (1 << 58)
 
 @verify(CONTINUOUS, UNIQUE)
 class EObjectFlags(IntFlag, boundary=STRICT):
