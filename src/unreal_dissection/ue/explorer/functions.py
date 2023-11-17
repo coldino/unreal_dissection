@@ -10,6 +10,7 @@ from ...discovery.string import Utf16Discovery
 from ...discovery.struct import StructDiscovery
 from ...discovery.system import register_explorer
 from ..functions import (
+    CachedRedirectFnArtefact,
     StaticClassFnArtefact,
     ZConstructFnArtefact,
     ZConstructFnType,
@@ -24,6 +25,12 @@ if TYPE_CHECKING:
     from ...lieftools import Image
 
 log = getLogger(__name__)
+
+
+@register_explorer(CachedRedirectFnArtefact)
+def explore_CachedRedirectFnArtefact(subject: CachedRedirectFnArtefact, _image: Image) -> Iterator[Discovery]:
+    log.debug('Exploring CachedRedirectFnArtefact %r', subject)
+    yield FunctionDiscovery(subject.called_method_ptr, parse_ZConstructOrStaticClass)
 
 
 @register_explorer(ZConstructFnArtefact)

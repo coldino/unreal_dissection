@@ -80,7 +80,7 @@ class CachedCallResult:
 class ParseFailureError(Exception):
     pass
 
-def parse_cached_call(code: CodeGrabber) -> CachedCallResult:
+def parse_cached_call(code: CodeGrabber, *, allow_no_ending: bool = False) -> CachedCallResult:
     stack_size, stack_save_reg = parse_fn_prelude(code)
 
     # Look for cache apparatus first
@@ -110,14 +110,14 @@ def parse_cached_call(code: CodeGrabber) -> CachedCallResult:
         assert inst.code in (Code.JNE_REL8_64, Code.JNE_REL32_64)
         ret_label = inst.memory_displacement
     else:
-        raise ParseFailureError(f'Unexpected instruction when parsing cached call: {inst.code} @ 0x{inst.ip:x}')
+        raise ParseFailureError(f'Unexpected instruction when parsing cached call main section: {inst.code} @ 0x{inst.ip:x}')
 
     # Parse the setup and call of the function
     fn_addr, parameters = gather_call_params(code, stack_size, stack_save_reg)
 
     # MOV RAX, [?] (should be cache_var)
     inst = code.next_inst()
-    if inst.code == Code.MOV_R64_RM64:
+    if inst.code in (Code.MOV_R64_RM64, Code.MOV_RM64_R64):
         if cache_form == 2: assert inst.ip == ret_label
         assert inst.memory_displacement == cache_var
 
@@ -130,9 +130,9 @@ def parse_cached_call(code: CodeGrabber) -> CachedCallResult:
         # RET
         inst = code.next_inst()
         assert inst.code == Code.RETNQ
-    else:
+    elif not allow_no_ending:
         # We have to assume this is not a simple cached call as there's other processing here
-        raise ParseFailureError(f'Unexpected instruction when parsing cached call: {inst.code} @ 0x{inst.ip:x}')
+        raise ParseFailureError(f'Unexpected instruction when parsing cached call ending: {inst.code} @ 0x{inst.ip:x}')
 
     return CachedCallResult(
         cache_addr=cache_var,
@@ -233,7 +233,7 @@ def gather_call_params(code: CodeGrabber,  # noqa: PLR0915, PLR0912 - yes, this 
             parameters.append((value, 8, offset))
 
         # Or MOV Rx, #? (simply set a register)
-        elif inst.code == Code.MOV_R64_IMM64:
+        elif inst.code in (Code.MOV_R64_IMM64, Code.MOV_R32_IMM32):
             reg: Register_ = info.used_registers()[0].register
             value = inst.immediate(1)
 
@@ -322,6 +322,15 @@ def parse_fn_prelude(code: CodeGrabber) -> tuple[int, Register_ | None]:
     if inst.code == Code.MOV_R64_RM64:
         assert info.used_registers()[1].register == Register.RSP
         stack_save_reg = info.used_registers()[0].register
+        inst, info = code.next_info()
+
+    # Optionally many MOV [RSP+?], R? (save registers)
+    while inst.code == Code.MOV_RM64_R64:
+        assert info.used_memory()[0].base == Register.RSP
+        inst, info = code.next_info()
+
+    # Optionally multiple PUSHes
+    while inst.code == Code.PUSH_R64:
         inst, info = code.next_info()
 
     # SUB RSP, #? (local stack size)

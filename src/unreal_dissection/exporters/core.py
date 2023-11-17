@@ -6,7 +6,7 @@ from ..discovery.struct import StructArtefact
 from ..discovery.system import DiscoverySystem
 from ..lieftools import Image
 from ..struct import get_struct_size_aligned
-from ..ue.functions import StaticClassFnArtefact, ZConstructFnArtefact
+from ..ue.functions import CachedRedirectFnArtefact, StaticClassFnArtefact, ZConstructFnArtefact
 from ..ue.native_structs import FClassParams, FEnumParams, FFunctionParams, FPackageParams, FStructParams
 
 
@@ -38,6 +38,8 @@ def export_ptr_array[T](count: int, ptr: int, ctx: ExportContext, struct: type[T
     ptrs = stream.ptr_array(count)
     def checked_artefact(sub_ptr: int) -> T | None:
         artefact = ctx.discovery.found[sub_ptr]
+        if isinstance(artefact, CachedRedirectFnArtefact):
+            artefact = ctx.discovery.found[artefact.called_method_ptr]
         if isinstance(artefact, UnparsableFunctionArtefact):
             return None
         if not isinstance(artefact, struct):
@@ -45,7 +47,7 @@ def export_ptr_array[T](count: int, ptr: int, ctx: ExportContext, struct: type[T
         return artefact
     return tuple(artefact for artefact in (checked_artefact(sub_ptr) for sub_ptr in ptrs) if artefact is not None)
 
-def get_name(obj: Any, ctx: ExportContext) -> str:
+def get_name(obj: Any, ctx: ExportContext) -> str:  # noqa: PLR0911
     match obj:
         case ZConstructFnArtefact():
             params_artefact = ctx.discovery.found_structs[obj.params_struct_ptr]
@@ -53,6 +55,9 @@ def get_name(obj: Any, ctx: ExportContext) -> str:
 
         case StructArtefact():
             return get_name(obj.struct, ctx) # type: ignore
+
+        case CachedRedirectFnArtefact():
+            return get_name(ctx.discovery.found[obj.called_method_ptr], ctx)
 
         case FClassParams():
             fn = ctx.discovery.found[obj.ClassNoRegisterFunc]
@@ -84,6 +89,9 @@ def get_ref(obj: Any, ctx: ExportContext) -> tuple[str, str]:  # noqa: PLR0911
             cls_name = ctx.discovery.get_string(obj.name_ptr)
             pkg_name = ctx.discovery.get_string(obj.package_name_ptr)
             return 'class', f'{pkg_name}.{cls_name}'
+
+        case CachedRedirectFnArtefact():
+            return get_ref(ctx.discovery.found[obj.called_method_ptr], ctx)
 
         case StructArtefact():
             return get_ref(obj.struct, ctx) # type: ignore

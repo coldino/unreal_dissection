@@ -65,6 +65,35 @@ class Pattern:
             else:
                 yield offset
 
+    def search_reverse(self, memory: memoryview) -> Iterator[int]:
+        """
+        Searches for the pattern in a memoryview, starting from the end.
+
+        Args:
+            memory: The memoryview to search in.
+
+        Returns:
+            The offsets of the pattern in the memoryview.
+
+        Doctests:
+        >>> list(Pattern((ByteMatch(mask=255, value=0xad), )).search_reverse(memoryview(b'\\xde\\xad\\xbe\\xef')))
+        [1]
+        >>> list(Pattern((ByteMatch(mask=255, value=0xad), )).search_reverse(memoryview(b'\\xde\\xad\\xbe\\xad')))
+        [3, 1]
+        >>> list(Pattern((ByteMatch(mask=255, value=0xde), ByteMatch(mask=255, value=0xad))).search_reverse(memoryview(b'\\xde\\xad\\xbe\\xad')))
+        [0]
+        >>> list(Pattern((ByteMatch(mask=255, value=0xbe), ByteMatch(mask=255, value=0xad))).search_reverse(memoryview(b'\\xde\\xad\\xbe\\xad')))
+        [2]
+        >>> list(Pattern((ByteMatch(mask=255, value=0xdd), )).search_reverse(memoryview(b'\\xde\\xad\\xbe\\xad')))
+        []
+        """  # noqa: E501 - wrapping in doctests is a pain
+        for offset in range(len(memory) - len(self.entries), -1, -1):
+            for i, match in enumerate(self.entries):
+                if not match.matches(memory[offset + i]):
+                    break
+            else:
+                yield offset
+
 
 def compile_pattern(pattern: str) -> Pattern:
     """Compiles a pattern string into a tuple of byte matches.
