@@ -1,6 +1,8 @@
-from logging import INFO, basicConfig
+import os
+from logging import basicConfig
 
-basicConfig(level=INFO)
+LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
+basicConfig(level=LOGLEVEL)
 
 
 if __name__ == '__main__':
