@@ -119,6 +119,8 @@ def export_FClassParams(struct: FClassParams, ctx: ExportContext) -> dict[str, A
         'super': get_blueprint_path(ctx.discovery.found[super_cls], ctx) if super_cls else None,
         'within': get_blueprint_path(ctx.discovery.found[reg_fn.within_class_fn_ptr], ctx) if within_cls else None,
 
+        'class_flags': struct.ClassFlags,
+
         'dependencies': tuple(get_blueprint_path(dependency, ctx) for dependency in deps),
         'properties': tuple(_parse_property_list(props, ctx)),
         # 'interfaces': tuple(get_blueprint_path(interface_ptr, ctx) for interface_ptr in interfaces),
